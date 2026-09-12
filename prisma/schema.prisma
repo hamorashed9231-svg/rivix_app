@@ -50,6 +50,7 @@ model User {
   addresses   Address[]
   restaurants Restaurant[] @relation("OwnerRestaurants")
   orders      Order[]      @relation("CustomerOrders")
+  reviews     Review[]     @relation("CustomerReviews")
 }
 
 model Address {
@@ -79,6 +80,7 @@ model Restaurant {
 
   branches Branch[]
   coupons  Coupon[]
+  reviews  Review[]
 }
 
 model Branch {
@@ -152,7 +154,8 @@ model Order {
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 
-  items OrderItem[]
+  items  OrderItem[]
+  review Review?
 }
 
 model OrderItem {
@@ -164,4 +167,20 @@ model OrderItem {
   quantity   Int
   price      Float
   notes      String?
+}
+
+model Review {
+  id             String     @id @default(cuid())
+  orderId        String     @unique
+  order          Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User       @relation("CustomerReviews", fields: [userId], references: [id], onDelete: Cascade)
+  restaurantId   String
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  rating         Int
+  foodRating     Int        @default(5)
+  deliveryRating Int        @default(5)
+  comment        String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }

@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Star, Clock, MapPin, Phone } from "lucide-react"
 import { MobileMenuBrowser } from "./MobileMenuBrowser"
+import { RestaurantReviewsSection } from "@/components/RestaurantReviewsSection"
 
 export default async function RestaurantDetailPage({
   params,
@@ -35,7 +36,7 @@ export default async function RestaurantDetailPage({
   const defaultBranch = restaurant.branches[0]
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-6 pb-24">
       {/* Mobile Top Header Banner */}
       <div className="relative h-48 w-full bg-slate-900">
         <Image
@@ -68,7 +69,7 @@ export default async function RestaurantDetailPage({
           </div>
 
           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-xl text-amber-300 text-xs font-black">
-            <Star className="w-4 h-4 fill-amber-400 text-amber-400" /> 4.9 (120+ تقييم)
+            <Star className="w-4 h-4 fill-amber-400 text-amber-400" /> 4.9 (تقييمات مؤكدة)
           </div>
         </div>
 
@@ -98,6 +99,11 @@ export default async function RestaurantDetailPage({
       ) : (
         <div className="p-8 text-center text-xs text-slate-500">لا توجد أصناف مضافة حالياً.</div>
       )}
+
+      {/* Customer Reviews Section */}
+      <div className="px-4">
+        <RestaurantReviewsSection restaurantId={restaurant.id} />
+      </div>
     </div>
   )
 }

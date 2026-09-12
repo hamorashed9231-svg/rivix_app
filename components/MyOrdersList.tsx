@@ -10,9 +10,11 @@ import {
   Truck, 
   UtensilsCrossed, 
   MapPin, 
-  ArrowRight
+  ArrowRight,
+  Star
 } from "lucide-react"
 import { useCart, CartItem } from "./CartProvider"
+import { ReviewModal } from "./ReviewModal"
 
 interface OrderItem {
   id: string
@@ -48,6 +50,7 @@ export function MyOrdersList() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all")
   const [reorderingId, setReorderingId] = useState<string | null>(null)
+  const [activeReviewOrder, setActiveReviewOrder] = useState<{ id: string; name: string } | null>(null)
   
   const { replaceCart } = useCart()
   const router = useRouter()
@@ -281,6 +284,21 @@ export function MyOrdersList() {
                       </Link>
                     )}
 
+                    {/* Rate Experience Button */}
+                    {order.status === "delivered" && (
+                      <button
+                        onClick={() =>
+                          setActiveReviewOrder({
+                            id: order.id,
+                            name: order.branch?.restaurant?.name || "المطعم",
+                          })
+                        }
+                        className="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-amber-500/10"
+                      >
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" /> تقييم التجربة
+                      </button>
+                    )}
+
                     {/* 1-Click Re-Order Button */}
                     <button
                       onClick={() => handleReorder(order)}
@@ -297,6 +315,15 @@ export function MyOrdersList() {
           })}
         </div>
       )}
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={!!activeReviewOrder}
+        onClose={() => setActiveReviewOrder(null)}
+        orderId={activeReviewOrder?.id || ""}
+        restaurantName={activeReviewOrder?.name || ""}
+        onSubmitted={fetchOrders}
+      />
     </div>
   )
 }
