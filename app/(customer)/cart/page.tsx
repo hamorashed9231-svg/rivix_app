@@ -4,13 +4,56 @@ import { useState } from "react"
 import { useCart } from "@/components/CartProvider"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, ShoppingBag, ArrowLeft, CheckCircle, Clock, Sparkles } from "lucide-react"
+import { ArrowRight, ShoppingBag, ArrowLeft, CheckCircle, Clock, Sparkles, Tag, Check } from "lucide-react"
 
 export default function CartPage() {
   const { items, updateQuantity, clearCart, totalPrice, restaurantId, restaurantName } = useCart()
   const [submitting, setSubmitting] = useState(false)
   const [createdOrder, setCreatedOrder] = useState<any | null>(null)
   const [error, setError] = useState("")
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("")
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null)
+  const [discountAmount, setDiscountAmount] = useState(0)
+  const [validatingCoupon, setValidatingCoupon] = useState(false)
+  const [couponMessage, setCouponMessage] = useState("")
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return
+    setValidatingCoupon(true)
+    setCouponMessage("")
+
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponCode,
+          subtotal: totalPrice,
+          restaurantId,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.valid) {
+        setAppliedCoupon(data.coupon)
+        setDiscountAmount(data.coupon.discountAmount)
+        setCouponMessage(data.message)
+      } else {
+        setAppliedCoupon(null)
+        setDiscountAmount(0)
+        setCouponMessage(data.error || "كود الخصم غير صالح")
+      }
+    } catch (err) {
+      setCouponMessage("حدث خطأ أثناء فحص الكود")
+    } finally {
+      setValidatingCoupon(false)
+    }
+  }
+
+  const finalTotal = Math.max(0, totalPrice + 15 - discountAmount)
 
   const handleConfirmOrder = async () => {
     if (!restaurantId || items.length === 0) return
@@ -28,7 +71,9 @@ export default function CartPage() {
             quantity: i.quantity,
             price: i.price,
           })),
-          totalPrice: totalPrice + 15,
+          totalPrice: finalTotal,
+          discountAmount,
+          couponId: appliedCoupon?.id || null,
         }),
       })
 
@@ -75,7 +120,7 @@ export default function CartPage() {
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-slate-400">إجمالي المبلغ الدفوع:</span>
+            <span className="text-slate-400">إجمالي المبلغ المدفوع:</span>
             <span className="font-black text-white text-sm">{createdOrder.totalPrice} ر.س</span>
           </div>
         </div>
@@ -180,19 +225,59 @@ export default function CartPage() {
         ))}
       </div>
 
+      {/* Promo Code Coupon Section */}
+      <div className="bg-[#0B192C] border border-slate-800 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2 text-xs font-bold text-white">
+          <Tag className="w-4 h-4 text-cyan-400" />
+          <span>هل لديك كود خصم أو كوبون؟</span>
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="أدخل الكود (مثال: RIVIX20)"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+            className="flex-1 bg-slate-900 border border-slate-700 px-3 py-2 rounded-xl text-xs font-mono uppercase text-white focus:outline-none focus:border-cyan-400"
+          />
+          <button
+            onClick={handleApplyCoupon}
+            disabled={validatingCoupon || !couponCode}
+            className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition-colors disabled:opacity-50"
+          >
+            {validatingCoupon ? "فحص..." : "تطبيق"}
+          </button>
+        </div>
+
+        {couponMessage && (
+          <p className={`text-xs font-bold ${appliedCoupon ? "text-emerald-400" : "text-rose-400"}`}>
+            {couponMessage}
+          </p>
+        )}
+      </div>
+
       {/* Bill Summary */}
       <div className="bg-[#0B192C] border border-slate-800 rounded-2xl p-4 space-y-2 text-xs">
         <div className="flex justify-between text-slate-400">
           <span>مجموع الوجبات</span>
           <span className="text-white font-bold">{totalPrice} ر.س</span>
         </div>
+
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-emerald-400 font-bold">
+            <span>الخصم المطبق ({appliedCoupon?.code})</span>
+            <span>-{discountAmount} ر.س</span>
+          </div>
+        )}
+
         <div className="flex justify-between text-slate-400">
           <span>رسوم التوصيل السريع</span>
           <span className="text-emerald-400 font-bold">15.00 ر.س</span>
         </div>
+
         <div className="pt-2 border-t border-slate-800 flex justify-between text-sm font-black text-white">
           <span>المبلغ الإجمالي</span>
-          <span className="text-cyan-400 text-lg">{totalPrice + 15} ر.س</span>
+          <span className="text-cyan-400 text-lg">{finalTotal} ر.س</span>
         </div>
       </div>
 

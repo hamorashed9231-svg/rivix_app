@@ -9,6 +9,7 @@ import {
   ShoppingBag, 
   ShieldCheck, 
   TrendingUp,
+  Tag,
   Store,
   UserCheck
 } from "lucide-react"
@@ -34,12 +35,14 @@ export default async function DashboardLayout({
 
   const adminNav = [
     { name: "لوحة الأدمن الرئيسية", href: "/dashboard/admin", icon: ShieldCheck },
+    { name: "إدارة الكوبونات والخصومات", href: "/dashboard/admin/coupons", icon: Tag },
     { name: "تقارير المبيعات والتحليلات", href: "/dashboard/admin/analytics", icon: TrendingUp },
     { name: "تتبع طلبات المنصة", href: "/dashboard/orders", icon: ShoppingBag },
   ]
 
   const ownerNav = [
     { name: "لوحة تحكم المطعم", href: "/dashboard/restaurant", icon: LayoutDashboard },
+    { name: "إدارة الكوبونات والخصومات", href: "/dashboard/admin/coupons", icon: Tag },
     { name: "تقارير المبيعات والتحليلات", href: "/dashboard/restaurant/analytics", icon: TrendingUp },
     { name: "إدارة المنيو والأصناف", href: "/dashboard/restaurant/menu", icon: UtensilsCrossed },
     { name: "إدارة الفروع", href: "/dashboard/restaurant/branches", icon: GitFork },

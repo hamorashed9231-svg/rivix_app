@@ -32,6 +32,11 @@ enum OrderStatus {
   cancelled
 }
 
+enum DiscountType {
+  percentage
+  fixed
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -73,6 +78,7 @@ model Restaurant {
   updatedAt      DateTime         @updatedAt
 
   branches Branch[]
+  coupons  Coupon[]
 }
 
 model Branch {
@@ -113,6 +119,22 @@ model MenuItem {
   orderItems OrderItem[]
 }
 
+model Coupon {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  discountType   DiscountType @default(percentage)
+  discountValue  Float
+  minOrderAmount Float        @default(0.0)
+  maxDiscount    Float?
+  expiresAt      DateTime?
+  isActive       Boolean      @default(true)
+  restaurantId   String?
+  restaurant     Restaurant?  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  orders Order[]
+}
+
 model Order {
   id                 String      @id @default(cuid())
   customerId         String
@@ -121,6 +143,9 @@ model Order {
   branch             Branch      @relation(fields: [branchId], references: [id])
   status             OrderStatus @default(pending)
   totalPrice         Float
+  discountAmount     Float       @default(0.0)
+  couponId           String?
+  coupon             Coupon?     @relation(fields: [couponId], references: [id])
   deliveryAddressId  String
   deliveryAddress    Address     @relation("DeliveryAddressOrders", fields: [deliveryAddressId], references: [id])
   driverAssignmentId String?

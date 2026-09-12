@@ -1,14 +1,15 @@
-import { PrismaClient, Role, RestaurantStatus, OrderStatus } from '@prisma/client'
+import { PrismaClient, Role, RestaurantStatus, OrderStatus, DiscountType } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Starting DB seeding with historical time-series analytics data...')
+  console.log('🌱 Starting DB seeding with historical time-series analytics and promo codes...')
 
   // Clear existing data in reverse order of dependencies
   await prisma.orderItem.deleteMany()
   await prisma.order.deleteMany()
+  await prisma.coupon.deleteMany()
   await prisma.menuItem.deleteMany()
   await prisma.menuCategory.deleteMany()
   await prisma.branch.deleteMany()
@@ -52,14 +53,24 @@ async function main() {
     },
   })
 
-  // 4. Create Address for Customer
-  const address = await prisma.address.create({
+  // 4. Create Addresses for Customer
+  const address1 = await prisma.address.create({
     data: {
       userId: customer.id,
-      label: 'المنزل',
+      label: 'المنزل 🏠',
       lat: 24.7136,
       lng: 46.6753,
       details: 'الرياض - حي الملقا - شارع حائل - فيلا 12',
+    },
+  })
+
+  const address2 = await prisma.address.create({
+    data: {
+      userId: customer.id,
+      label: 'العمل 🏢',
+      lat: 24.6900,
+      lng: 46.6800,
+      details: 'الرياض - حي العليا - برج ريفيكس - الدور 15',
     },
   })
 
@@ -76,7 +87,28 @@ async function main() {
     },
   })
 
-  // 6. Create Branches
+  // 6. Create Coupons
+  const coupon1 = await prisma.coupon.create({
+    data: {
+      code: 'RIVIX20',
+      discountType: DiscountType.percentage,
+      discountValue: 20.0,
+      minOrderAmount: 30.0,
+      isActive: true,
+    },
+  })
+
+  const coupon2 = await prisma.coupon.create({
+    data: {
+      code: 'WELCOME50',
+      discountType: DiscountType.fixed,
+      discountValue: 50.0,
+      minOrderAmount: 100.0,
+      isActive: true,
+    },
+  })
+
+  // 7. Create Branches
   const branch1 = await prisma.branch.create({
     data: {
       restaurantId: restaurant.id,
@@ -101,7 +133,7 @@ async function main() {
     },
   })
 
-  // 7. Create Menu Categories
+  // 8. Create Menu Categories
   const cat1 = await prisma.menuCategory.create({
     data: {
       branchId: branch1.id,
@@ -126,7 +158,7 @@ async function main() {
     },
   })
 
-  // 8. Create Menu Items
+  // 9. Create Menu Items
   const item1 = await prisma.menuItem.create({
     data: {
       categoryId: cat2.id,
@@ -171,7 +203,7 @@ async function main() {
     },
   })
 
-  // 9. Generate Time-Series Historical Orders for the Past 7 Days
+  // 10. Generate Time-Series Historical Orders
   const now = new Date()
 
   const historicalOrdersData = [
@@ -201,7 +233,7 @@ async function main() {
         branchId: o.branchId,
         status: o.status,
         totalPrice: o.price,
-        deliveryAddressId: address.id,
+        deliveryAddressId: address1.id,
         createdAt: orderDate,
         items: {
           create: [
@@ -216,7 +248,7 @@ async function main() {
     })
   }
 
-  console.log('✅ DB Seeding completed with rich historical data!')
+  console.log('✅ DB Seeding completed successfully with coupons and addresses!')
 }
 
 main()
