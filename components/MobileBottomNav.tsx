@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Compass, ShoppingBag, User } from "lucide-react"
+import { Home, Compass, ShoppingBag, Clock, User } from "lucide-react"
 import { useCart } from "./CartProvider"
 
 export function MobileBottomNav() {
@@ -16,8 +16,8 @@ export function MobileBottomNav() {
 
   const navItems = [
     { label: "الرئيسية", href: "/", icon: Home },
-    { label: "المطاعم", href: "/#restaurants", icon: Compass },
-    { label: "سليكتي", href: "/cart", icon: ShoppingBag, badge: totalCount },
+    { label: "السلة", href: "/cart", icon: ShoppingBag, badge: totalCount },
+    { label: "طلباتي", href: "/my-orders", icon: Clock },
     { label: "حسابي", href: "/login", icon: User },
   ]
 

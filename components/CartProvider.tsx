@@ -19,6 +19,7 @@ interface CartContextType {
   removeItem: (id: string) => void
   updateQuantity: (id: string, delta: number) => void
   clearCart: () => void
+  replaceCart: (newItems: CartItem[]) => void
   totalCount: number
   totalPrice: number
   restaurantId: string | null
@@ -90,6 +91,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems([])
   }
 
+  const replaceCart = (newItems: CartItem[]) => {
+    setItems(newItems)
+  }
+
   const totalCount = items.reduce((sum, i) => sum + i.quantity, 0)
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
@@ -101,6 +106,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeItem,
         updateQuantity,
         clearCart,
+        replaceCart,
         totalCount,
         totalPrice,
         restaurantId,
