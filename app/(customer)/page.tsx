@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma"
 import Image from "next/image"
 import Link from "next/link"
 import { 
-  MapPin, 
   Search, 
   Star, 
   Clock, 
@@ -12,6 +11,8 @@ import {
   Sparkles,
   Zap
 } from "lucide-react"
+import { MobileLocationPrompt } from "@/components/MobileLocationPrompt"
+import { NotificationPrompt } from "@/components/NotificationPrompt"
 
 export default async function CustomerHomePage() {
   const restaurants = await prisma.restaurant.findMany({
@@ -22,26 +23,36 @@ export default async function CustomerHomePage() {
   })
 
   return (
-    <div className="space-y-6 p-4">
-      {/* Top Mobile Bar */}
-      <header className="flex items-center justify-between gap-3 pt-2">
-        <div className="flex items-center gap-2 text-xs">
-          <div className="w-8 h-8 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-lg shadow-cyan-500/20">
-            <MapPin className="w-4 h-4" />
+    <div className="space-y-5 p-4">
+      {/* Top Mobile Header & Location Component */}
+      <header className="space-y-3 pt-1">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="relative w-8 h-8 rounded-full overflow-hidden border border-cyan-400/40 shadow-lg shadow-cyan-500/20 shrink-0">
+              <Image src="/logo.jpg" alt="RIVIX" fill className="object-cover" />
+            </div>
+            <div>
+              <h1 className="text-base font-extrabold tracking-wider bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                RIVIX
+              </h1>
+              <p className="text-[9px] text-slate-400 uppercase font-mono">Restaurant Platform</p>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] text-slate-400 font-medium">التوصيل إلى</span>
-            <p className="font-bold text-white text-xs truncate max-w-[180px]">حي الملقا - الرياض 📍</p>
-          </div>
+
+          <Link
+            href="/login"
+            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:text-white"
+          >
+            تسجيل الدخول
+          </Link>
         </div>
 
-        <Link
-          href="/login"
-          className="relative w-9 h-9 rounded-full overflow-hidden border border-cyan-400/40 shadow-lg shadow-cyan-500/20 shrink-0"
-        >
-          <Image src="/logo.jpg" alt="RIVIX" fill className="object-cover" />
-        </Link>
+        {/* Real-time GPS Location Permission Component */}
+        <MobileLocationPrompt />
       </header>
+
+      {/* Push Notifications Permission Component */}
+      <NotificationPrompt />
 
       {/* Hero Banner Promo */}
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#0B192C] via-slate-900 to-[#0091FF]/30 p-6 border border-cyan-500/30 shadow-2xl shadow-cyan-950/40 group">
