@@ -46,8 +46,8 @@ export default async function OrdersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">شاشة المطبخ والطلبات المباشرة (Live Kitchen Board)</h1>
-        <p className="text-sm text-slate-400 mt-1">متابعة وتحديث حالات الطلبات لحظياً وتنظيم مراحل التجهيز والتوصيل.</p>
+        <h1 className="text-2xl font-bold text-white tracking-tight">شاشة استقبال واستلام الطلبات (Order Dispatch Center)</h1>
+        <p className="text-sm text-slate-400 mt-1">استقبال طلبات العملاء فوراً، الموافقة عليها واستلامها، أو تحويلها إلى النظام الخارجي (POS Integration).</p>
       </div>
 
       <OrderBoard initialOrders={orders} />
