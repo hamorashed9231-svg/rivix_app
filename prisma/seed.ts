@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Starting DB seeding...')
+  console.log('🌱 Starting DB seeding with historical time-series analytics data...')
 
   // Clear existing data in reverse order of dependencies
   await prisma.orderItem.deleteMany()
@@ -76,8 +76,8 @@ async function main() {
     },
   })
 
-  // 6. Create Branch
-  const branch = await prisma.branch.create({
+  // 6. Create Branches
+  const branch1 = await prisma.branch.create({
     data: {
       restaurantId: restaurant.id,
       address: 'فرع الملقا - طريق أنس بن مالك',
@@ -89,10 +89,22 @@ async function main() {
     },
   })
 
+  const branch2 = await prisma.branch.create({
+    data: {
+      restaurantId: restaurant.id,
+      address: 'فرع التخصصي - طريق التخصصي',
+      phone: '0598765432',
+      lat: 24.6900,
+      lng: 46.6800,
+      openingHours: { open: '11:00 AM', close: '01:00 AM' },
+      isActive: true,
+    },
+  })
+
   // 7. Create Menu Categories
   const cat1 = await prisma.menuCategory.create({
     data: {
-      branchId: branch.id,
+      branchId: branch1.id,
       name: 'الأطباق الرئيسية والمشويات',
       order: 1,
     },
@@ -100,7 +112,7 @@ async function main() {
 
   const cat2 = await prisma.menuCategory.create({
     data: {
-      branchId: branch.id,
+      branchId: branch1.id,
       name: 'الساندوتشات والبرجر',
       order: 2,
     },
@@ -108,7 +120,7 @@ async function main() {
 
   const cat3 = await prisma.menuCategory.create({
     data: {
-      branchId: branch.id,
+      branchId: branch1.id,
       name: 'المشروبات والتحلية',
       order: 3,
     },
@@ -159,60 +171,52 @@ async function main() {
     },
   })
 
-  // 9. Create Sample Orders with Different Statuses
-  const order1 = await prisma.order.create({
-    data: {
-      customerId: customer.id,
-      branchId: branch.id,
-      status: OrderStatus.pending,
-      totalPrice: 67.0,
-      deliveryAddressId: address.id,
-      items: {
-        create: [
-          { menuItemId: item1.id, quantity: 1, price: 45.0 },
-          { menuItemId: item3.id, quantity: 1, price: 22.0 },
-        ],
-      },
-    },
-  })
+  // 9. Generate Time-Series Historical Orders for the Past 7 Days
+  const now = new Date()
 
-  const order2 = await prisma.order.create({
-    data: {
-      customerId: customer.id,
-      branchId: branch.id,
-      status: OrderStatus.preparing,
-      totalPrice: 130.0,
-      deliveryAddressId: address.id,
-      items: {
-        create: [
-          { menuItemId: item2.id, quantity: 1, price: 85.0 },
-          { menuItemId: item1.id, quantity: 1, price: 45.0 },
-        ],
-      },
-    },
-  })
+  const historicalOrdersData = [
+    { daysAgo: 6, status: OrderStatus.delivered, branchId: branch1.id, item: item1, qty: 3, price: 135.0 },
+    { daysAgo: 6, status: OrderStatus.delivered, branchId: branch2.id, item: item2, qty: 2, price: 170.0 },
+    { daysAgo: 5, status: OrderStatus.delivered, branchId: branch1.id, item: item2, qty: 3, price: 255.0 },
+    { daysAgo: 5, status: OrderStatus.delivered, branchId: branch2.id, item: item3, qty: 4, price: 88.0 },
+    { daysAgo: 4, status: OrderStatus.delivered, branchId: branch1.id, item: item1, qty: 4, price: 180.0 },
+    { daysAgo: 4, status: OrderStatus.delivered, branchId: branch2.id, item: item4, qty: 5, price: 90.0 },
+    { daysAgo: 3, status: OrderStatus.delivered, branchId: branch1.id, item: item2, qty: 4, price: 340.0 },
+    { daysAgo: 3, status: OrderStatus.delivered, branchId: branch1.id, item: item3, qty: 3, price: 66.0 },
+    { daysAgo: 2, status: OrderStatus.delivered, branchId: branch2.id, item: item1, qty: 5, price: 225.0 },
+    { daysAgo: 2, status: OrderStatus.delivered, branchId: branch1.id, item: item2, qty: 2, price: 170.0 },
+    { daysAgo: 1, status: OrderStatus.delivered, branchId: branch1.id, item: item1, qty: 6, price: 270.0 },
+    { daysAgo: 1, status: OrderStatus.delivered, branchId: branch2.id, item: item3, qty: 5, price: 110.0 },
+    { daysAgo: 0, status: OrderStatus.pending, branchId: branch1.id, item: item1, qty: 2, price: 90.0 },
+    { daysAgo: 0, status: OrderStatus.accepted, branchId: branch2.id, item: item2, qty: 1, price: 85.0 },
+  ]
 
-  const order3 = await prisma.order.create({
-    data: {
-      customerId: customer.id,
-      branchId: branch.id,
-      status: OrderStatus.ready,
-      totalPrice: 40.0,
-      deliveryAddressId: address.id,
-      items: {
-        create: [
-          { menuItemId: item3.id, quantity: 1, price: 22.0 },
-          { menuItemId: item4.id, quantity: 1, price: 18.0 },
-        ],
-      },
-    },
-  })
+  for (const o of historicalOrdersData) {
+    const orderDate = new Date(now)
+    orderDate.setDate(now.getDate() - o.daysAgo)
 
-  console.log('✅ DB Seeding completed successfully!')
-  console.log('🔑 Credentials:')
-  console.log('   Admin: admin@rivix.com / password123')
-  console.log('   Owner: owner@rivix.com / password123')
-  console.log('   Customer: customer@rivix.com / password123')
+    await prisma.order.create({
+      data: {
+        customerId: customer.id,
+        branchId: o.branchId,
+        status: o.status,
+        totalPrice: o.price,
+        deliveryAddressId: address.id,
+        createdAt: orderDate,
+        items: {
+          create: [
+            {
+              menuItemId: o.item.id,
+              quantity: o.qty,
+              price: o.item.price,
+            },
+          ],
+        },
+      },
+    })
+  }
+
+  console.log('✅ DB Seeding completed with rich historical data!')
 }
 
 main()
