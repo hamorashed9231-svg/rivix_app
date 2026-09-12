@@ -1,13 +1,97 @@
 "use client"
 
+import { useState } from "react"
 import { useCart } from "@/components/CartProvider"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, Trash2, Plus, Minus, ShoppingBag, ArrowLeft, CheckCircle } from "lucide-react"
+import { ArrowRight, ShoppingBag, ArrowLeft, CheckCircle, Clock, Sparkles } from "lucide-react"
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, clearCart, totalPrice, restaurantName } = useCart()
+  const { items, updateQuantity, clearCart, totalPrice, restaurantId, restaurantName } = useCart()
+  const [submitting, setSubmitting] = useState(false)
+  const [createdOrder, setCreatedOrder] = useState<any | null>(null)
+  const [error, setError] = useState("")
 
+  const handleConfirmOrder = async () => {
+    if (!restaurantId || items.length === 0) return
+    setSubmitting(true)
+    setError("")
+
+    try {
+      const res = await fetch("/api/customer/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId,
+          items: items.map((i) => ({
+            id: i.id,
+            quantity: i.quantity,
+            price: i.price,
+          })),
+          totalPrice: totalPrice + 15,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "حدث خطأ أثناء إرسال الطلب")
+      } else {
+        setCreatedOrder(data.order)
+        clearCart()
+      }
+    } catch (err) {
+      setError("حدث خطأ أثناء الاتصال بالخادم")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Order Success Screen
+  if (createdOrder) {
+    return (
+      <div className="min-h-screen bg-slate-950 p-6 flex flex-col items-center justify-center text-center space-y-6 max-w-md mx-auto">
+        <div className="w-24 h-24 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-emerald-400 animate-bounce shadow-2xl shadow-emerald-500/20">
+          <CheckCircle className="w-12 h-12" />
+        </div>
+
+        <div className="space-y-2">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            <Sparkles className="w-3.5 h-3.5" /> تم إرسال الطلب بنجاح!
+          </span>
+          <h2 className="text-2xl font-black text-white">شكراً لطلبك من {restaurantName}</h2>
+          <p className="text-xs text-slate-400">تم استلام طلبك وبانتظار موافقة موظف الاستقبال فوراً.</p>
+        </div>
+
+        <div className="w-full bg-[#0B192C] border border-slate-800 rounded-2xl p-4 space-y-3 text-xs text-right">
+          <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+            <span className="text-slate-400">رقم الطلب المرجعي:</span>
+            <span className="font-mono font-extrabold text-cyan-400 text-sm">#{createdOrder.id.slice(-6).toUpperCase()}</span>
+          </div>
+          <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+            <span className="text-slate-400">الحالة الحالية:</span>
+            <span className="font-bold text-amber-400 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> قيد الانتظار 🟡
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">إجمالي المبلغ الدفوع:</span>
+            <span className="font-black text-white text-sm">{createdOrder.totalPrice} ر.س</span>
+          </div>
+        </div>
+
+        <Link
+          href="/"
+          className="w-full py-4 rounded-2xl bg-cyan-500 text-slate-950 font-black text-xs shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2"
+        >
+          <span>العودة للرئيسية وتصفح المزيد</span>
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
+      </div>
+    )
+  }
+
+  // Empty Cart Screen
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-slate-950 p-6 flex flex-col items-center justify-center text-center space-y-4 max-w-md mx-auto">
@@ -38,6 +122,12 @@ export default function CartPage() {
           مسح السلة
         </button>
       </div>
+
+      {error && (
+        <div className="rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-300 text-center font-bold">
+          {error}
+        </div>
+      )}
 
       {/* Restaurant Header */}
       <div className="bg-[#0B192C] border border-cyan-500/30 rounded-2xl p-4 flex items-center justify-between">
@@ -76,14 +166,14 @@ export default function CartPage() {
                 onClick={() => updateQuantity(item.id, -1)}
                 className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-200 text-xs font-bold"
               >
-                <Minus className="w-3.5 h-3.5" />
+                -
               </button>
               <span className="text-xs font-black text-white w-4 text-center">{item.quantity}</span>
               <button
                 onClick={() => updateQuantity(item.id, 1)}
                 className="w-7 h-7 rounded-lg bg-cyan-500 text-slate-950 flex items-center justify-center font-bold text-xs"
               >
-                <Plus className="w-3.5 h-3.5" />
+                +
               </button>
             </div>
           </div>
@@ -108,10 +198,11 @@ export default function CartPage() {
 
       {/* Checkout Button */}
       <button
-        onClick={() => alert("تم إرسال الطلب بنجاح! يمكنك تتبع الطلب من لوحة الموظف.")}
-        className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 text-slate-950 font-black text-sm shadow-2xl shadow-cyan-500/30 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
+        onClick={handleConfirmOrder}
+        disabled={submitting}
+        className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 text-slate-950 font-black text-sm shadow-2xl shadow-cyan-500/30 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform disabled:opacity-50"
       >
-        <span>تأكيد الطلب والدفع (إرسال)</span>
+        <span>{submitting ? "جاري إرسال الطلب للموظف..." : "تأكيد الطلب والدفع (إرسال)"}</span>
         <ArrowLeft className="w-5 h-5" />
       </button>
     </div>

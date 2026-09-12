@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   Bell, 
   CheckCircle, 
@@ -14,13 +14,39 @@ import {
   Check, 
   Ban,
   ShoppingBag,
-  ArrowUpRight
+  RefreshCw
 } from "lucide-react"
 
 export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
   const [orders, setOrders] = useState<any[]>(initialOrders)
   const [activeTab, setActiveTab] = useState<"pending" | "accepted" | "history">("pending")
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Fetch updated orders list
+  const refreshOrders = async () => {
+    setIsRefreshing(true)
+    try {
+      const res = await fetch("/api/customer/orders")
+      if (res.ok) {
+        const data = await res.json()
+        if (data.orders) {
+          setOrders(data.orders)
+        }
+      }
+    } catch (e) {
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  // Auto-refresh polling every 10 seconds to catch live incoming orders
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshOrders()
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   const pendingOrders = orders.filter((o) => o.status === "pending")
   const acceptedOrders = orders.filter((o) => o.status === "accepted" || o.status === "preparing" || o.status === "ready" || o.status === "out_for_delivery")
@@ -99,50 +125,62 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
 
   return (
     <div className="space-y-6">
-      {/* Navigation Filter Tabs */}
-      <div className="flex items-center gap-3 bg-[#0B192C] p-2 rounded-xl border border-slate-800 w-fit">
-        <button
-          onClick={() => setActiveTab("pending")}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === "pending"
-              ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-lg"
-              : "text-slate-400 hover:text-white"
-          }`}
-        >
-          <Bell className="w-4 h-4 text-amber-400 animate-pulse" />
-          طلبات واردة بحاجة لاتخاذ إجراء
-          {pendingOrders.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[11px]">
-              {pendingOrders.length}
+      {/* Navigation Filter Tabs & Refresh Button */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 bg-[#0B192C] p-2 rounded-xl border border-slate-800 w-fit">
+          <button
+            onClick={() => setActiveTab("pending")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-lg transition-all ${
+              activeTab === "pending"
+                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-lg"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Bell className="w-4 h-4 text-amber-400 animate-pulse" />
+            طلبات واردة بحاجة لاتخاذ إجراء
+            {pendingOrders.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[11px]">
+                {pendingOrders.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab("accepted")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-lg transition-all ${
+              activeTab === "accepted"
+                ? "bg-cyan-600 text-white shadow-lg"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <CheckCircle className="w-4 h-4 text-cyan-300" />
+            طلبات مقبولة / محولة
+            <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[11px]">
+              {acceptedOrders.length}
             </span>
-          )}
-        </button>
+          </button>
 
-        <button
-          onClick={() => setActiveTab("accepted")}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === "accepted"
-              ? "bg-cyan-600 text-white shadow-lg"
-              : "text-slate-400 hover:text-white"
-          }`}
-        >
-          <CheckCircle className="w-4 h-4 text-cyan-300" />
-          طلبات مقبولة / محولة
-          <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[11px]">
-            {acceptedOrders.length}
-          </span>
-        </button>
+          <button
+            onClick={() => setActiveTab("history")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-lg transition-all ${
+              activeTab === "history"
+                ? "bg-slate-800 text-white"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4 text-slate-400" />
+            سجل الطلبات ({historyOrders.length})
+          </button>
+        </div>
 
+        {/* Manual Refresh Button */}
         <button
-          onClick={() => setActiveTab("history")}
-          className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === "history"
-              ? "bg-slate-800 text-white"
-              : "text-slate-400 hover:text-white"
-          }`}
+          onClick={refreshOrders}
+          disabled={isRefreshing}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B192C] border border-slate-800 text-slate-300 hover:text-cyan-400 text-xs font-bold transition-all shadow-md"
         >
-          <ShoppingBag className="w-4 h-4 text-slate-400" />
-          سجل الطلبات ({historyOrders.length})
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-cyan-400" : ""}`} />
+          <span>تحديث مباشر</span>
         </button>
       </div>
 
@@ -203,7 +241,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                   )}
                 </div>
 
-                {/* Items List */}
+                {/* Order Items */}
                 <div className="space-y-2">
                   <span className="text-xs font-semibold text-slate-400">عناصر الطلب ({order.items?.length || 0}):</span>
                   <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
