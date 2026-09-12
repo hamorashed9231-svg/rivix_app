@@ -4,10 +4,12 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Compass, ShoppingBag, Clock, User } from "lucide-react"
 import { useCart } from "./CartProvider"
+import { useLanguage } from "./LanguageProvider"
 
 export function MobileBottomNav() {
   const pathname = usePathname()
   const { totalCount } = useCart()
+  const { t } = useLanguage()
 
   // Hide bottom nav on dashboard routes
   if (pathname.startsWith("/dashboard")) {
@@ -15,10 +17,10 @@ export function MobileBottomNav() {
   }
 
   const navItems = [
-    { label: "الرئيسية", href: "/", icon: Home },
-    { label: "السلة", href: "/cart", icon: ShoppingBag, badge: totalCount },
-    { label: "طلباتي", href: "/my-orders", icon: Clock },
-    { label: "حسابي", href: "/login", icon: User },
+    { label: t("home"), href: "/", icon: Home },
+    { label: t("cart"), href: "/cart", icon: ShoppingBag, badge: totalCount },
+    { label: t("myOrders"), href: "/my-orders", icon: Clock },
+    { label: t("login"), href: "/login", icon: User },
   ]
 
   return (

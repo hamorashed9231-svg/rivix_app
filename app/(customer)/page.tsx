@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { MobileLocationPrompt } from "@/components/MobileLocationPrompt"
 import { NotificationPrompt } from "@/components/NotificationPrompt"
+import { LanguageToggle } from "@/components/LanguageToggle"
 
 export default async function CustomerHomePage() {
   const restaurants = await prisma.restaurant.findMany({
@@ -39,12 +40,15 @@ export default async function CustomerHomePage() {
             </div>
           </div>
 
-          <Link
-            href="/login"
-            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:text-white"
-          >
-            تسجيل الدخول
-          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageToggle />
+            <Link
+              href="/login"
+              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:text-white"
+            >
+              تسجيل الدخول
+            </Link>
+          </div>
         </div>
 
         {/* Real-time GPS Location Permission Component */}
