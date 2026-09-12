@@ -3,6 +3,13 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 
+if (!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL === "") {
+  if (process.env.VERCEL_URL) {
+    process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`
+  } else {
+    process.env.NEXTAUTH_URL = "http://localhost:3000"
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   session: {
