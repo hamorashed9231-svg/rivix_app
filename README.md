@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Restaurant Platform (منصة المطاعم المتعددة) 🍔🍕
 
-## Getting Started
+منصة **Multi-vendor** للمطاعم تمكّن العملاء من الطلب، وأصحاب المطاعم من إدارة مطاعمهم وطلباتهم، والمديرين من إشراف وحوكمة المنصة.
 
-First, run the development server:
+---
 
+## 🚀 التقنيات المستخدمة (Tech Stack)
+
+- **Framework:** [Next.js 14+](https://nextjs.org/) (App Router) مع **TypeScript**
+- **Database & ORM:** [Prisma ORM](https://www.prisma.io/) مع **PostgreSQL**
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Authentication:** [NextAuth.js](https://next-auth.js.org/)
+
+---
+
+## 👥 أنواع المستخدمين (Roles)
+
+يتم تصنيف المستخدمين عبر حقل `role` واحد في جدول `User`:
+- `customer`: عميل عادي تصفح المطاعم، إدارة العناوين والطلبات.
+- `restaurant_owner`: صاحب مطعم (لوحة تحكم خاصة لإدارة الفروع، المنيو، والطلبات).
+- `admin`: مدير المنصة (لوحة تحكم كاملة للحوكمة ونسب العمولات والمطاعم).
+
+---
+
+## 🗄️ مخطط قاعدة البيانات (Prisma Models)
+
+- **User**: بيانات العميل/صاحب المطعم/الأدمن.
+- **Address**: عناوين التوصيل المرتبطة بالعميل (مع الإحداثيات lat/lng).
+- **Restaurant**: بيانات المطعم (الشعار، الغلاف، الحالة: pending/active/suspended، ونسبة العمولات).
+- **Branch**: فروع المطاعم (ساعات العمل، الموقع، رقم الهاتف).
+- **MenuCategory**: تصنيفات المنيو الخاصة بكل فرع.
+- **MenuItem**: أصناف المنيو (السعر، الصورة، التوفر).
+- **Order**: الطلبات (الحالة، العنوان، إجمالي السعر، ورابط مع Driver API الخارجي).
+- **OrderItem**: تفاصيل العناصر المطبوعة في الطلب.
+
+---
+
+## 🛠️ خطوات التشغيل محليًا (Local Setup)
+
+### 1. استنساخ المشروع وتثبيت الحزم
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd restaurant-platform
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. إعداد متغيرات البيئة (Environment Variables)
+قم بإنشاء ملف `.env` بناءً على `.env.example`:
+```bash
+cp .env.example .env
+```
+ثم عدّل قيم `DATABASE_URL` و `NEXTAUTH_SECRET` و `NEXTAUTH_URL`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. تجهيز قاعدة البيانات وتوليد Prisma Client
+```bash
+# توليد Prisma Client
+npx prisma generate
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# تطبيق الهيكل على قاعدة بيانات PostgreSQL (عند ربط قاعدة البيانات)
+npx prisma db push
+```
 
-## Learn More
+### 4. تشغيل السيرفر المحلي
+```bash
+npm run dev
+```
+افتح [http://localhost:3000](http://localhost:3000) في المتصفح.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📁 هيكل المجلدات (Folder Structure)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+restaurant-platform/
+├── app/
+│   ├── (customer)/     # صفحات العميل
+│   ├── (dashboard)/    # داش بورد صاحب المطعم والأدمن
+│   ├── api/            # API Routes & NextAuth
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/         # المكونات المعاد استخدامها
+├── lib/
+│   └── prisma.ts       # إعداد Prisma Client Singleton
+├── prisma/
+│   └── schema.prisma   # مخطط قاعدة البيانات
+├── .env.example
+├── package.json
+└── README.md
+```

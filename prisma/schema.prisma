@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  customer
+  restaurant_owner
+  admin
+}
+
+enum RestaurantStatus {
+  pending
+  active
+  suspended
+}
+
+enum OrderStatus {
+  pending
+  accepted
+  preparing
+  ready
+  out_for_delivery
+  delivered
+  cancelled
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  password  String
+  role      Role     @default(customer)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  addresses   Address[]
+  restaurants Restaurant[] @relation("OwnerRestaurants")
+  orders      Order[]      @relation("CustomerOrders")
+}
+
+model Address {
+  id      String @id @default(cuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label   String
+  lat     Float
+  lng     Float
+  details String
+
+  orders Order[] @relation("DeliveryAddressOrders")
+}
+
+model Restaurant {
+  id             String           @id @default(cuid())
+  ownerId        String
+  owner          User             @relation("OwnerRestaurants", fields: [ownerId], references: [id], onDelete: Cascade)
+  name           String
+  logo           String?
+  coverImage     String?
+  description    String?
+  status         RestaurantStatus @default(pending)
+  commissionRate Float            @default(0.0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  branches Branch[]
+}
+
+model Branch {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  address      String
+  lat          Float
+  lng          Float
+  phone        String
+  openingHours Json
+  isActive     Boolean    @default(true)
+
+  menuCategories MenuCategory[]
+  orders         Order[]
+}
+
+model MenuCategory {
+  id       String @id @default(cuid())
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  name     String
+  order    Int    @default(0)
+
+  items MenuItem[]
+}
+
+model MenuItem {
+  id          String       @id @default(cuid())
+  categoryId  String
+  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  price       Float
+  image       String?
+  isAvailable Boolean      @default(true)
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id                 String      @id @default(cuid())
+  customerId         String
+  customer           User        @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Cascade)
+  branchId           String
+  branch             Branch      @relation(fields: [branchId], references: [id])
+  status             OrderStatus @default(pending)
+  totalPrice         Float
+  deliveryAddressId  String
+  deliveryAddress    Address     @relation("DeliveryAddressOrders", fields: [deliveryAddressId], references: [id])
+  driverAssignmentId String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int
+  price      Float
+  notes      String?
+}
