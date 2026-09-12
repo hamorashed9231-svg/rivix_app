@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { CartProvider } from "@/components/CartProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Restaurant Platform - منصة المطاعم المتعددة",
-  description: "منصة طلبات الطعام والمطاعم المتعددة",
+  title: "RIVIX - تجربة طلب الطعام الأسرع والحديثة",
+  description: "اطلب أشهى المأكولات والمشويات من مطاعمك المفضلة مباشرة عبر RIVIX",
 };
 
 export default function RootLayout({
@@ -27,10 +28,12 @@ export default function RootLayout({
     <html
       lang="ar"
       dir="rtl"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">
+        <Providers>
+          <CartProvider>{children}</CartProvider>
+        </Providers>
       </body>
     </html>
   );
