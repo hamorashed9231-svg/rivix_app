@@ -14,7 +14,15 @@ import {
   Check, 
   Ban,
   ShoppingBag,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  Edit,
+  Trash2,
+  X,
+  Plus,
+  Minus,
+  Save,
+  AlertTriangle
 } from "lucide-react"
 
 export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
@@ -22,6 +30,11 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
   const [activeTab, setActiveTab] = useState<"pending" | "accepted" | "history">("pending")
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Modals state
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any | null>(null)
+  const [editingOrder, setEditingOrder] = useState<any | null>(null)
+  const [editItems, setEditItems] = useState<any[]>([])
 
   // Fetch updated orders list
   const refreshOrders = async () => {
@@ -40,7 +53,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
     }
   }
 
-  // Auto-refresh polling every 10 seconds to catch live incoming orders
+  // Auto-refresh polling every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       refreshOrders()
@@ -52,7 +65,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
   const acceptedOrders = orders.filter((o) => o.status === "accepted" || o.status === "preparing" || o.status === "ready" || o.status === "out_for_delivery")
   const historyOrders = orders.filter((o) => o.status === "delivered" || o.status === "cancelled")
 
-  // Accept Order Directly
+  // Accept Order
   const handleAcceptOrder = async (orderId: string) => {
     setLoadingId(orderId)
     try {
@@ -73,7 +86,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
     }
   }
 
-  // Reject / Cancel Order
+  // Reject Order
   const handleRejectOrder = async (orderId: string) => {
     setLoadingId(orderId)
     try {
@@ -94,7 +107,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
     }
   }
 
-  // Forward to External System / POS Integration
+  // Forward to External System / POS
   const handleForwardToPOS = async (orderId: string) => {
     setLoadingId(orderId)
     try {
@@ -111,6 +124,83 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
       }
     } catch (err) {
       alert("حدث خطأ أثناء تحويل الطلب للنظام الخارجي")
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  // Delete Order
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm("هل أنت تأكد من رغبتك في حذف هذا الطلب نهائياً من النظام؟")) return
+    setLoadingId(orderId)
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "DELETE",
+      })
+
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => o.id !== orderId))
+        if (selectedOrderDetails?.id === orderId) setSelectedOrderDetails(null)
+      }
+    } catch (err) {
+      alert("حدث خطأ أثناء حذف الطلب")
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  // Start Editing Order
+  const openEditModal = (order: any) => {
+    setEditingOrder(order)
+    setEditItems(
+      order.items.map((i: any) => ({
+        id: i.id,
+        menuItemId: i.menuItemId,
+        name: i.menuItem?.name || "صنف",
+        price: i.price,
+        quantity: i.quantity,
+      }))
+    )
+  }
+
+  const updateEditQuantity = (index: number, delta: number) => {
+    setEditItems((prev) => {
+      const updated = [...prev]
+      const newQty = updated[index].quantity + delta
+      if (newQty > 0) {
+        updated[index].quantity = newQty
+      }
+      return updated
+    })
+  }
+
+  const removeEditItem = (index: number) => {
+    setEditItems((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const saveEditedOrder = async () => {
+    if (!editingOrder || editItems.length === 0) return
+    setLoadingId(editingOrder.id)
+
+    const newTotalPrice = editItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
+
+    try {
+      const res = await fetch(`/api/orders/${editingOrder.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: editItems,
+          totalPrice: newTotalPrice,
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setOrders((prev) => prev.map((o) => (o.id === editingOrder.id ? data.order : o)))
+        setEditingOrder(null)
+      }
+    } catch (err) {
+      alert("حدث خطأ أثناء حفظ التعديلات")
     } finally {
       setLoadingId(null)
     }
@@ -208,16 +298,33 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                     </h4>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-cyan-400" />
-                      {new Date(order.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    {isPosForwarded && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                        <Cpu className="w-3 h-3 text-cyan-400" /> محول للـ POS
-                      </span>
-                    )}
+                  <div className="flex items-center gap-2">
+                    {/* View Details Button */}
+                    <button
+                      onClick={() => setSelectedOrderDetails(order)}
+                      title="عرض التفاصيل الكاملة"
+                      className="p-1.5 rounded-lg bg-slate-800 text-cyan-400 hover:bg-slate-700 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+
+                    {/* Edit Order Button */}
+                    <button
+                      onClick={() => openEditModal(order)}
+                      title="تعديل عناصر الطلب"
+                      className="p-1.5 rounded-lg bg-slate-800 text-amber-400 hover:bg-slate-700 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+
+                    {/* Delete Order Button */}
+                    <button
+                      onClick={() => handleDeleteOrder(order.id)}
+                      title="حذف الطلب نهائياً"
+                      className="p-1.5 rounded-lg bg-slate-800 text-rose-400 hover:bg-slate-700 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
@@ -266,7 +373,6 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                 {order.status === "pending" && (
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">
-                      {/* Accept Order */}
                       <button
                         onClick={() => handleAcceptOrder(order.id)}
                         disabled={loadingId === order.id}
@@ -275,7 +381,6 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                         <Check className="w-4 h-4" /> قبول واستلام
                       </button>
 
-                      {/* Forward to POS Integration */}
                       <button
                         onClick={() => handleForwardToPOS(order.id)}
                         disabled={loadingId === order.id}
@@ -285,7 +390,6 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                       </button>
                     </div>
 
-                    {/* Reject Button */}
                     <button
                       onClick={() => handleRejectOrder(order.id)}
                       disabled={loadingId === order.id}
@@ -323,7 +427,130 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
         <div className="bg-[#0B192C] border border-slate-800 rounded-2xl p-12 text-center max-w-md mx-auto space-y-3">
           <ShoppingBag className="w-12 h-12 text-slate-600 mx-auto" />
           <h3 className="text-base font-bold text-white">لا توجد طلبات في هذا القسم حالياً</h3>
-          <p className="text-xs text-slate-400">ستظهر الطلبات الجديدة فور قيام العملاء بالطلب عبر المنصة.</p>
+        </div>
+      )}
+
+      {/* Order Details Modal */}
+      {selectedOrderDetails && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0B192C] border border-slate-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
+            <button
+              onClick={() => setSelectedOrderDetails(null)}
+              className="absolute top-4 left-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="border-b border-slate-800 pb-3">
+              <span className="text-xs text-slate-400">بيانات تفاصيل الطلب الكاملة</span>
+              <h3 className="text-xl font-extrabold text-white">#{selectedOrderDetails.id.slice(-6).toUpperCase()}</h3>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="bg-slate-900 p-3 rounded-xl space-y-1">
+                <p className="text-slate-400">العميل: <strong className="text-white">{selectedOrderDetails.customer?.name}</strong></p>
+                <p className="text-slate-400">الهاتف: <strong className="text-cyan-400 font-mono">{selectedOrderDetails.customer?.phone}</strong></p>
+                <p className="text-slate-400">العنوان: <strong className="text-white">{selectedOrderDetails.deliveryAddress?.details}</strong></p>
+              </div>
+
+              <div className="bg-slate-900 p-3 rounded-xl space-y-2">
+                <span className="font-bold text-slate-300">الوجبات المحددة:</span>
+                {selectedOrderDetails.items?.map((item: any) => (
+                  <div key={item.id} className="flex justify-between border-b border-slate-800/60 pb-1">
+                    <span className="text-white">x{item.quantity} {item.menuItem?.name}</span>
+                    <span className="text-cyan-400 font-bold">{item.price * item.quantity} ر.س</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-between text-sm font-black text-white pt-2">
+                <span>الإجمالي الكلي:</span>
+                <span className="text-cyan-300">{selectedOrderDetails.totalPrice} ر.س</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSelectedOrderDetails(null)}
+              className="w-full py-2.5 rounded-xl bg-slate-800 text-white font-bold text-xs hover:bg-slate-700"
+            >
+              إغلاق النافذة
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0B192C] border border-cyan-500/30 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
+            <button
+              onClick={() => setEditingOrder(null)}
+              className="absolute top-4 left-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="border-b border-slate-800 pb-3">
+              <h3 className="text-lg font-extrabold text-white">تعديل طلب #{editingOrder.id.slice(-6).toUpperCase()}</h3>
+              <p className="text-xs text-slate-400">تعديل كميات الأصناف وحساب الإجمالي تلقائياً</p>
+            </div>
+
+            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+              {editItems.map((item, idx) => (
+                <div key={idx} className="bg-slate-900 p-3 rounded-xl flex items-center justify-between text-xs">
+                  <div>
+                    <h5 className="font-bold text-white">{item.name}</h5>
+                    <p className="text-cyan-400 font-extrabold">{item.price * item.quantity} ر.س</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-lg">
+                    <button
+                      onClick={() => updateEditQuantity(idx, -1)}
+                      className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-white"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <span className="font-black text-white px-2">{item.quantity}</span>
+                    <button
+                      onClick={() => updateEditQuantity(idx, 1)}
+                      className="w-6 h-6 rounded bg-cyan-600 flex items-center justify-center text-white"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => removeEditItem(idx)}
+                      className="text-rose-400 hover:text-rose-300 ml-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-sm">
+              <span className="text-slate-400">الإجمالي الجديد:</span>
+              <span className="font-black text-cyan-300">
+                {editItems.reduce((sum, i) => sum + i.price * i.quantity, 0)} ر.س
+              </span>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setEditingOrder(null)}
+                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={saveEditedOrder}
+                disabled={loadingId === editingOrder.id}
+                className="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-1.5"
+              >
+                <Save className="w-4 h-4" /> حفظ التغييرات
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
