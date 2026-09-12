@@ -88,7 +88,7 @@ async function main() {
   })
 
   // 6. Create Coupons
-  const coupon1 = await prisma.coupon.create({
+  await prisma.coupon.create({
     data: {
       code: 'RIVIX20',
       discountType: DiscountType.percentage,
@@ -98,7 +98,7 @@ async function main() {
     },
   })
 
-  const coupon2 = await prisma.coupon.create({
+  await prisma.coupon.create({
     data: {
       code: 'WELCOME50',
       discountType: DiscountType.fixed,
