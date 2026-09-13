@@ -42,7 +42,13 @@ export default async function RestaurantDashboardPage() {
       <div className="bg-[#0B192C] border border-slate-800 rounded-xl p-8 text-center max-w-lg mx-auto space-y-4">
         <Store className="w-12 h-12 text-cyan-400 mx-auto" />
         <h2 className="text-xl font-bold text-white">لم يتم العثور على مطعم مرخص لـ {user.name}</h2>
-        <p className="text-sm text-slate-400">يرجى التواصل مع مدير المنصة لتأكيد بيانات مطعمك وإصدار التراخيص.</p>
+        <p className="text-sm text-slate-400">يمكنك إضافة وإعداد مطعمك الجديد وتخصيص الهوية البصرية الآن.</p>
+        <Link
+          href="/dashboard/restaurants/new"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand-sky text-white font-bold text-sm shadow-lg shadow-brand-sky/20 hover:bg-brand-sky/90 transition-all"
+        >
+          <PlusCircle className="w-4 h-4" /> إضافة مطعم جديد الآن
+        </Link>
       </div>
     )
   }
@@ -83,12 +89,27 @@ export default async function RestaurantDashboardPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {restaurant.slug && (
+            <Link
+              href={`/restaurant/${restaurant.slug}`}
+              target="_blank"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-sky/10 border border-brand-sky/30 hover:bg-brand-sky/20 text-brand-sky font-medium text-sm transition-colors"
+            >
+              <Store className="w-4 h-4" /> معاينة صفحة المطعم
+            </Link>
+          )}
+          <Link
+            href="/dashboard/restaurants/new"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm transition-colors border border-slate-700"
+          >
+            <PlusCircle className="w-4 h-4 text-cyan-400" /> مطعم جديد
+          </Link>
           <Link
             href="/dashboard/restaurant/menu"
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-colors shadow-lg shadow-cyan-600/20"
           >
-            <PlusCircle className="w-4 h-4" /> إضافة أصناف مأكولات
+            <PlusCircle className="w-4 h-4" /> إضافة أصناف
           </Link>
         </div>
       </div>

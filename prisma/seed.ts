@@ -90,9 +90,12 @@ async function main() {
     data: {
       ownerId: owner.id,
       name: 'مطعم ريفيكس جريل - RIVIX Grill',
+      slug: 'rivix-grill',
       logo: '/logo.jpg',
       coverImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
       description: 'أفضل الوجبات المشوية والبرجر بلمسة RIVIX الخاصة',
+      primaryColor: '#2196F3',
+      secondaryColor: '#0A1A3C',
       status: RestaurantStatus.active,
       commissionRate: 12.5,
     },

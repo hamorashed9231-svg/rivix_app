@@ -70,9 +70,12 @@ model Restaurant {
   ownerId        String
   owner          User             @relation("OwnerRestaurants", fields: [ownerId], references: [id], onDelete: Cascade)
   name           String
+  slug           String           @unique
   logo           String?
   coverImage     String?
   description    String?
+  primaryColor   String           @default("#2196F3")
+  secondaryColor String           @default("#0A1A3C")
   status         RestaurantStatus @default(pending)
   commissionRate Float            @default(0.0)
   createdAt      DateTime         @default(now())
