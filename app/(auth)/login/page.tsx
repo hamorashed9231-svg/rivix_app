@@ -158,7 +158,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-slate-950 font-black text-sm shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50"
+          className="w-full py-3 rounded-xl bg-brand-sky hover:bg-brand-sky/90 text-brand-white font-black text-sm shadow-lg shadow-brand-sky/20 transition-all disabled:opacity-50 cursor-pointer"
         >
           {loading ? "جاري الدخول..." : "تسجيل الدخول الآن 🚀"}
         </button>

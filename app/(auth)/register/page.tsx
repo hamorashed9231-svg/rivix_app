@@ -124,7 +124,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+              className="flex w-full justify-center rounded-xl bg-brand-sky px-4 py-2.5 text-sm font-bold text-brand-white shadow-sm hover:bg-brand-sky/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-sky disabled:opacity-50 transition-all cursor-pointer"
             >
               {loading ? "جاري إنشاء الحساب..." : "إنشاء الحساب"}
             </button>
