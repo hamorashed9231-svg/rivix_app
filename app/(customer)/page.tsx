@@ -43,7 +43,7 @@ export default async function CustomerHomePage() {
           <div className="flex items-center gap-2">
             <LanguageToggle />
             <Link
-              href="/login"
+              href="/customer/login"
               className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:text-white"
             >
               تسجيل الدخول

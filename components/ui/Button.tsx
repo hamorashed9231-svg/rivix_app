@@ -4,6 +4,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
+  roundedFull?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -13,14 +14,16 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "primary",
       size = "md",
       isLoading = false,
+      roundedFull = false,
       children,
       disabled,
       ...props
     },
     ref
   ) => {
-    const baseStyles =
-      "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]";
+    const baseStyles = `inline-flex items-center justify-center font-medium ${
+      roundedFull ? "rounded-full" : "rounded-xl"
+    } transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]`;
 
     const variantStyles = {
       primary:
