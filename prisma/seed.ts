@@ -42,6 +42,17 @@ async function main() {
     },
   })
 
+  // 2b. Create Staff Dispatch Manager
+  await prisma.user.create({
+    data: {
+      name: 'مدير الأصطاف واستقبال الطلبات (Staff Dispatch Manager)',
+      email: 'staff@rivix.com',
+      password: hashedPassword,
+      phone: '0544444444',
+      role: Role.restaurant_owner,
+    },
+  })
+
   // 3. Create Customer
   const customer = await prisma.user.create({
     data: {

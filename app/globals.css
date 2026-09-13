@@ -3,17 +3,62 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+
+  /* Rivix Brand CSS Variables */
+  --brand-navy: #0A1A3C;
+  --brand-sky: #2196F3;
+  --brand-sky-light: #4FC3F7;
+  --brand-white: #FFFFFF;
+
+  --brand-gray-50: #F9FAFB;
+  --brand-gray-100: #F3F4F6;
+  --brand-gray-200: #E5E7EB;
+  --brand-gray-300: #D1D5DB;
+  --brand-gray-400: #9CA3AF;
+  --brand-gray-500: #6B7280;
+  --brand-gray-600: #4B5563;
+  --brand-gray-700: #374151;
+  --brand-gray-800: #1F2937;
+  --brand-gray-900: #111827;
+
+  --brand-success: #22C55E;
+  --brand-warning: #F59E0B;
+  --brand-danger: #EF4444;
+  --brand-info: #2196F3;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-sky: var(--brand-sky);
+  --color-brand-sky-light: var(--brand-sky-light);
+  --color-brand-white: var(--brand-white);
+
+  --color-brand-gray-50: var(--brand-gray-50);
+  --color-brand-gray-100: var(--brand-gray-100);
+  --color-brand-gray-200: var(--brand-gray-200);
+  --color-brand-gray-300: var(--brand-gray-300);
+  --color-brand-gray-400: var(--brand-gray-400);
+  --color-brand-gray-500: var(--brand-gray-500);
+  --color-brand-gray-600: var(--brand-gray-600);
+  --color-brand-gray-700: var(--brand-gray-700);
+  --color-brand-gray-800: var(--brand-gray-800);
+  --color-brand-gray-900: var(--brand-gray-900);
+
+  --color-brand-success: var(--brand-success);
+  --color-brand-warning: var(--brand-warning);
+  --color-brand-danger: var(--brand-danger);
+  --color-brand-info: var(--brand-info);
+
   --color-rivix-navy: #0B192C;
   --color-rivix-dark: #070E18;
   --color-rivix-blue: #0091FF;
   --color-rivix-cyan: #00D2FF;
   --color-rivix-light: #F0F7FF;
-  --font-sans: var(--font-geist-sans);
+
+  --font-sans: var(--font-inter), var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -33,3 +78,4 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+

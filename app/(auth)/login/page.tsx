@@ -77,7 +77,7 @@ function LoginForm() {
       {/* Quick Demo Login Buttons */}
       <div className="space-y-2 pt-1">
         <label className="text-[11px] font-bold text-slate-400 block">دخول سريع بنقرة واحدة (Demo Login):</label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-1.5">
           <button
             type="button"
             onClick={() => {
@@ -85,9 +85,21 @@ function LoginForm() {
               setPassword("password123")
               handleLogin("owner@rivix.com", "password123")
             }}
-            className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 text-cyan-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+            className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 text-cyan-300 font-bold text-[11px] flex flex-col items-center justify-center gap-1 transition-all"
           >
-            <Store className="w-4 h-4" /> صاحب مطعم 🔑
+            <Store className="w-4 h-4" /> صاحب مطعم
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEmail("staff@rivix.com")
+              setPassword("password123")
+              handleLogin("staff@rivix.com", "password123")
+            }}
+            className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300 font-bold text-[11px] flex flex-col items-center justify-center gap-1 transition-all"
+          >
+            <UserCheck className="w-4 h-4" /> مدير أصطاف
           </button>
 
           <button
@@ -97,9 +109,9 @@ function LoginForm() {
               setPassword("password123")
               handleLogin("admin@rivix.com", "password123")
             }}
-            className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+            className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-300 font-bold text-[11px] flex flex-col items-center justify-center gap-1 transition-all"
           >
-            <ShieldCheck className="w-4 h-4" /> أدمن المنصة 👑
+            <ShieldCheck className="w-4 h-4" /> أدمن المنصة
           </button>
         </div>
       </div>
