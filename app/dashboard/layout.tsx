@@ -11,7 +11,8 @@ import {
   TrendingUp,
   Tag,
   Store,
-  UserCheck
+  UserCheck,
+  Users
 } from "lucide-react"
 import { SignOutButton } from "@/components/SignOutButton"
 
@@ -43,6 +44,7 @@ export default async function DashboardLayout({
 
   const ownerNav = [
     { name: "لوحة تحكم المطعم", href: "/dashboard/restaurant", icon: LayoutDashboard },
+    { name: "إدارة طاقم العمل", href: "/dashboard/restaurant/staff", icon: Users },
     { name: "إدارة الكوبونات والخصومات", href: "/dashboard/admin/coupons", icon: Tag },
     { name: "تقارير المبيعات والتحليلات", href: "/dashboard/restaurant/analytics", icon: TrendingUp },
     { name: "إدارة المنيو والأصناف", href: "/dashboard/restaurant/menu", icon: UtensilsCrossed },

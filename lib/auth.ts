@@ -79,3 +79,43 @@ export async function getCurrentUser() {
   const session = await getServerSession(authOptions)
   return session?.user
 }
+
+export type RestaurantAccessLevel = "owner" | "manager" | "staff" | null
+
+export async function getRestaurantAccess(
+  userId: string,
+  restaurantId: string
+): Promise<RestaurantAccessLevel> {
+  if (!userId || !restaurantId) return null
+
+  // 1. Check if user is restaurant owner
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: { ownerId: true },
+  })
+
+  if (restaurant && restaurant.ownerId === userId) {
+    return "owner"
+  }
+
+  // 2. Check if user is active staff member
+  const staffRecord = await prisma.restaurantStaff.findUnique({
+    where: {
+      restaurantId_userId: {
+        restaurantId,
+        userId,
+      },
+    },
+    select: {
+      staffRole: true,
+      isActive: true,
+    },
+  })
+
+  if (staffRecord && staffRecord.isActive) {
+    return staffRecord.staffRole === "manager" ? "manager" : "staff"
+  }
+
+  return null
+}
+

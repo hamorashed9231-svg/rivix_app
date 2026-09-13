@@ -37,6 +37,11 @@ enum DiscountType {
   fixed
 }
 
+enum StaffRole {
+  manager
+  staff
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -47,10 +52,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  addresses   Address[]
-  restaurants Restaurant[] @relation("OwnerRestaurants")
-  orders      Order[]      @relation("CustomerOrders")
-  reviews     Review[]     @relation("CustomerReviews")
+  addresses        Address[]
+  restaurants      Restaurant[]      @relation("OwnerRestaurants")
+  orders           Order[]           @relation("CustomerOrders")
+  reviews          Review[]          @relation("CustomerReviews")
+  staffMemberships RestaurantStaff[]
 }
 
 model Address {
@@ -81,9 +87,23 @@ model Restaurant {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  branches Branch[]
-  coupons  Coupon[]
-  reviews  Review[]
+  branches     Branch[]
+  coupons      Coupon[]
+  reviews      Review[]
+  staffMembers RestaurantStaff[]
+}
+
+model RestaurantStaff {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  staffRole    StaffRole  @default(staff)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  @@unique([restaurantId, userId])
 }
 
 model Branch {
