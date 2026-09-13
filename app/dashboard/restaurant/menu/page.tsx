@@ -1,46 +1,91 @@
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, getRestaurantAccess } from "@/lib/auth"
+import { getDefaultBranch } from "@/lib/restaurant"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { MenuManager } from "./MenuManager"
+import { Utensils, ArrowRight } from "lucide-react"
+import Link from "next/link"
 
-export default async function MenuPage() {
+export default async function RestaurantMenuPage() {
   const user = await getCurrentUser()
 
-  if (!user || user.role !== "restaurant_owner") {
+  if (!user) {
     redirect("/login")
   }
 
-  const restaurant = await prisma.restaurant.findFirst({
+  // 1. Find restaurant owned by user or where user is staff/manager
+  let restaurant = await prisma.restaurant.findFirst({
     where: { ownerId: user.id },
-    include: {
-      branches: {
-        include: {
-          menuCategories: {
-            include: { items: true },
-            orderBy: { order: "asc" }
-          }
-        }
-      }
-    }
   })
 
-  if (!restaurant || restaurant.branches.length === 0) {
-    return (
-      <div className="bg-[#0B192C] border border-slate-800 rounded-xl p-8 text-center max-w-lg mx-auto">
-        <h2 className="text-xl font-bold text-white">لم يتم العثور على فروع للمطعم</h2>
-        <p className="text-sm text-slate-400 mt-2">يرجى إضافة فرع أولاً من صفحة الفروع لتتمكن من إضافة أصناف المنيو.</p>
-      </div>
-    )
+  if (!restaurant) {
+    const staffRecord = await prisma.restaurantStaff.findFirst({
+      where: { userId: user.id, isActive: true },
+      select: { restaurantId: true },
+    })
+
+    if (staffRecord) {
+      restaurant = await prisma.restaurant.findUnique({
+        where: { id: staffRecord.restaurantId },
+      })
+    }
   }
 
+  if (!restaurant) {
+    redirect("/dashboard/restaurant")
+  }
+
+  // 2. Validate Permission (Owner & Manager ONLY, not Staff)
+  const access = await getRestaurantAccess(user.id, restaurant.id)
+
+  if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+    // Restrict staff or unauthorized users
+    redirect("/dashboard/restaurant")
+  }
+
+  // 3. Get Default Branch for restaurant
+  const defaultBranch = await getDefaultBranch(restaurant.id)
+
+  if (!defaultBranch) {
+    redirect("/dashboard/restaurant")
+  }
+
+  // 4. Fetch menu categories and items for default branch
+  const categories = await prisma.menuCategory.findMany({
+    where: { branchId: defaultBranch.id },
+    include: {
+      items: true,
+    },
+    orderBy: { order: "asc" },
+  })
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">إدارة المنيو والتصنيفات (Menu Builder)</h1>
-        <p className="text-sm text-slate-400 mt-1">إضافة التصنيفات، أصناف المأكولات، التحكم بالأسعار وتوفر الأصناف الفوري.</p>
+    <div className="space-y-6 text-brand-white">
+      {/* Navigation Breadcrumb Header */}
+      <div className="flex items-center justify-between border-b border-brand-gray-800 pb-4">
+        <div>
+          <Link
+            href="/dashboard/restaurant"
+            className="inline-flex items-center gap-1.5 text-xs text-brand-gray-400 hover:text-brand-sky transition-colors mb-1"
+          >
+            <ArrowRight className="w-3.5 h-3.5" /> العودة للوحة المطعم
+          </Link>
+          <h1 className="text-2xl font-black text-brand-white flex items-center gap-2">
+            <Utensils className="w-6 h-6 text-brand-sky" /> المنيو الإلكتروني وقائمة الأطعمة
+          </h1>
+        </div>
+
+        <span className="px-3.5 py-1.5 rounded-full bg-brand-sky/10 border border-brand-sky/20 text-brand-sky text-xs font-bold font-mono">
+          MENU MANAGEMENT
+        </span>
       </div>
 
-      <MenuManager branches={restaurant.branches} />
+      {/* Menu Manager Interactive Client */}
+      <MenuManager
+        branchId={defaultBranch.id}
+        restaurantName={restaurant.name}
+        initialCategories={categories}
+      />
     </div>
   )
 }

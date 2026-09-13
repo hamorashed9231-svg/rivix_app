@@ -66,12 +66,25 @@ export async function POST(req: Request) {
         description: description || null,
         coverImage: coverImage || null,
         status: "pending",
+        branches: {
+          create: {
+            address: "الفرع الرئيسي",
+            phone: user.phone || "0500000000",
+            lat: 24.7136,
+            lng: 46.6753,
+            openingHours: { open: "10:00 AM", close: "12:00 AM" },
+            isActive: true,
+          },
+        },
+      },
+      include: {
+        branches: true,
       },
     })
 
     return NextResponse.json(
       {
-        message: "تم إنشاء المطعم بنجاح وفي انتظار المراجعة والاعتماد",
+        message: "تم إنشاء المطعم والفرع الرئيسي بنجاح وفي انتظار المراجعة والاعتماد",
         restaurant,
       },
       { status: 201 }
