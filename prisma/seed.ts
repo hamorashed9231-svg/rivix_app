@@ -17,15 +17,30 @@ async function main() {
   await prisma.address.deleteMany()
   await prisma.user.deleteMany()
 
+  // Check ADMIN_SEED_PASSWORD environment variable
+  const adminSeedPassword = process.env.ADMIN_SEED_PASSWORD
+  if (!adminSeedPassword || !adminSeedPassword.trim()) {
+    console.error("❌ خطأ قاتل: لم يتم العثور على متغير البيئة ADMIN_SEED_PASSWORD!")
+    console.error("يرجى إضافة ADMIN_SEED_PASSWORD في ملف .env وإعادة التشغيل.")
+    throw new Error("Missing ADMIN_SEED_PASSWORD in process.env")
+  }
+
   // Hash passwords
   const hashedPassword = await bcrypt.hash('password123', 10)
+  const hashedAdminPassword = await bcrypt.hash(adminSeedPassword.trim(), 10)
 
-  // 1. Create Admin
-  const admin = await prisma.user.create({
-    data: {
-      name: 'مدير المنصة (RIVIX Admin)',
-      email: 'admin@rivix.com',
-      password: hashedPassword,
+  // 1. Create or Update (upsert) Fixed Admin User
+  const admin = await prisma.user.upsert({
+    where: { email: 'rivix@admin.com' },
+    update: {
+      name: 'Rivix Admin',
+      password: hashedAdminPassword,
+      role: Role.admin,
+    },
+    create: {
+      email: 'rivix@admin.com',
+      name: 'Rivix Admin',
+      password: hashedAdminPassword,
       phone: '0500000000',
       role: Role.admin,
     },

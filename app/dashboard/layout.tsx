@@ -35,6 +35,7 @@ export default async function DashboardLayout({
 
   const adminNav = [
     { name: "لوحة الأدمن الرئيسية", href: "/dashboard/admin", icon: ShieldCheck },
+    { name: "إدارة وتراخيص المطاعم", href: "/dashboard/admin/restaurants", icon: Store },
     { name: "إدارة الكوبونات والخصومات", href: "/dashboard/admin/coupons", icon: Tag },
     { name: "تقارير المبيعات والتحليلات", href: "/dashboard/admin/analytics", icon: TrendingUp },
     { name: "تتبع طلبات المنصة", href: "/dashboard/orders", icon: ShoppingBag },
