@@ -7,6 +7,13 @@ export interface MenuItem {
   price: number;
   image?: string;
   category?: string;
+  isAvailable?: boolean;
+}
+
+export interface MenuCategory {
+  id: string;
+  name: string;
+  items: MenuItem[];
 }
 
 export interface RestaurantData {
@@ -20,6 +27,7 @@ export interface RestaurantData {
   phone?: string;
   address?: string;
   menu?: MenuItem[];
+  categories?: MenuCategory[];
 }
 
 export const getRestaurantSlug = (): string => {

@@ -3,6 +3,7 @@ import { View, ActivityIndicator, Image, Text, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { RestaurantProvider, useRestaurant } from '@/context/RestaurantContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { CartProvider } from '@/context/CartContext';
 
 function RootLayoutContent() {
   const { loading, restaurant, primaryColor } = useRestaurant();
@@ -36,7 +37,9 @@ export default function RootLayout() {
   return (
     <RestaurantProvider>
       <AuthProvider>
-        <RootLayoutContent />
+        <CartProvider>
+          <RootLayoutContent />
+        </CartProvider>
       </AuthProvider>
     </RestaurantProvider>
   );
