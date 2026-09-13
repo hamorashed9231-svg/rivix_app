@@ -1,13 +1,28 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
-import { useRestaurant } from '../../context/RestaurantContext';
-import { useAuth } from '../../context/AuthContext';
+import { useRestaurant } from '@/context/RestaurantContext';
+import { useAuth } from '@/context/AuthContext';
+import { requestLocationPermission } from '@/services/location';
+import { registerForPushNotificationsAsync } from '@/services/notifications';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { restaurant, primaryColor } = useRestaurant();
   const { user, isAuthenticated, logout } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Request location permission & push notification registration after login
+      (async () => {
+        const locationGranted = await requestLocationPermission();
+        console.log('[Home] Location permission status:', locationGranted);
+
+        const pushToken = await registerForPushNotificationsAsync();
+        console.log('[Home] Push Token result:', pushToken);
+      })();
+    }
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return <Redirect href="/" />;

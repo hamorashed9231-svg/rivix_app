@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, ActivityIndicator, Image, Text, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
-import { RestaurantProvider, useRestaurant } from '../../context/RestaurantContext';
-import { AuthProvider } from '../../context/AuthContext';
+import { RestaurantProvider, useRestaurant } from '@/context/RestaurantContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 function RootLayoutContent() {
   const { loading, restaurant, primaryColor } = useRestaurant();
