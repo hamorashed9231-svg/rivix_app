@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
+import * as XLSX from "xlsx"
 import {
   Plus,
   Trash2,
@@ -18,6 +19,10 @@ import {
   ToggleLeft,
   ToggleRight,
   X,
+  FileSpreadsheet,
+  Download,
+  Upload,
+  FileText,
 } from "lucide-react"
 
 interface MenuItem {
@@ -37,17 +42,21 @@ interface MenuCategory {
 }
 
 interface MenuManagerProps {
+  restaurantId: string
   branchId: string
   restaurantName: string
   initialCategories: MenuCategory[]
 }
 
 export function MenuManager({
+  restaurantId,
   branchId,
   restaurantName,
   initialCategories,
 }: MenuManagerProps) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [categories, setCategories] = useState<MenuCategory[]>(initialCategories)
 
   // New Category State
@@ -70,6 +79,14 @@ export function MenuManager({
   const [itemPrice, setItemPrice] = useState("")
   const [itemImage, setItemImage] = useState("")
   const [itemAvailable, setItemAvailable] = useState(true)
+
+  // Excel Import State
+  const [importing, setImporting] = useState(false)
+  const [importSummary, setImportSummary] = useState<{
+    categoriesCreated: number
+    itemsAdded: number
+    errors: string[]
+  } | null>(null)
 
   // Collapsed categories state
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(() => {
@@ -281,7 +298,6 @@ export function MenuManager({
   const handleToggleItemAvailability = async (categoryId: string, item: MenuItem) => {
     const newStatus = !item.isAvailable
 
-    // Optimistic UI update
     setCategories((prev) =>
       prev.map((c) =>
         c.id === categoryId
@@ -301,7 +317,6 @@ export function MenuManager({
       })
 
       if (!res.ok) {
-        // Revert on error
         router.refresh()
       }
     } catch (err) {
@@ -336,6 +351,88 @@ export function MenuManager({
     }
   }
 
+  // --- Excel Import/Export Handling ---
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setError("")
+    setSuccess("")
+    setImportSummary(null)
+    setImporting(true)
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}/menu/import`, {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "حدث خطأ أثناء استيراد ملف Excel")
+      } else {
+        setImportSummary({
+          categoriesCreated: data.summary.categoriesCreated,
+          itemsAdded: data.summary.itemsAdded,
+          errors: data.errors || [],
+        })
+        setSuccess(`تمت عملية الاستيراد بنجاح! تم إضافة ${data.summary.itemsAdded} صنف جديد.`)
+        router.refresh()
+      }
+    } catch (err) {
+      setError("حدث خطأ أثناء رفع وقراءة ملف Excel")
+    } finally {
+      setImporting(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
+
+  const handleDownloadSampleTemplate = () => {
+    const sampleData = [
+      {
+        "اسم القسم": "المقبلات والسلطات",
+        "اسم الصنف": "سلطة سيزر طازجة",
+        "الوصف": "خس طازج مع قطع الدجاج المشوي وصلصة السيزر والبرميزان",
+        "السعر": 35.0,
+        "متاح؟": "نعم",
+      },
+      {
+        "اسم القسم": "الأطباق الرئيسية والمشويات",
+        "اسم الصنف": "برجر ريفيكس السوبر",
+        "الوصف": "لحم أنجوس طازج مع جبن الشيدر الذائب وصوص ريفيكس الخاص",
+        "السعر": 65.0,
+        "متاح؟": "نعم",
+      },
+      {
+        "اسم القسم": "المشروبات والحلويات",
+        "اسم الصنف": "عصير برتقال طازج",
+        "الوصف": "برتقال طبيعي 100% بدون سكر مضاف",
+        "السعر": 18.0,
+        "متاح؟": "نعم",
+      },
+    ]
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData)
+    worksheet["!cols"] = [
+      { wch: 25 },
+      { wch: 30 },
+      { wch: 45 },
+      { wch: 15 },
+      { wch: 12 },
+    ]
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "نموذج المنيو")
+
+    XLSX.writeFile(workbook, "rivix-menu-sample-template.xlsx")
+  }
+
   return (
     <div className="space-y-8 text-brand-white">
       {/* Alert Notifications */}
@@ -353,8 +450,52 @@ export function MenuManager({
         </div>
       )}
 
-      {/* Top Controls Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-brand-navy/90 border border-brand-sky/20 rounded-3xl p-6 shadow-xl backdrop-blur-xl">
+      {/* Import Summary Details */}
+      {importSummary && (
+        <div className="rounded-2xl bg-brand-navy border border-brand-sky/30 p-5 space-y-3 shadow-lg">
+          <div className="flex items-center justify-between border-b border-brand-gray-800 pb-2">
+            <h3 className="text-sm font-extrabold text-brand-white flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-brand-sky" /> ملخص عملية استيراد Excel
+            </h3>
+            <button
+              type="button"
+              onClick={() => setImportSummary(null)}
+              className="text-brand-gray-400 hover:text-brand-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-3 rounded-xl bg-brand-gray-900 border border-brand-gray-800">
+              <span className="text-brand-gray-400 block text-[11px]">الأقسام الجديدة</span>
+              <span className="text-base font-black text-brand-sky">{importSummary.categoriesCreated}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-brand-gray-900 border border-brand-gray-800">
+              <span className="text-brand-gray-400 block text-[11px]">الأصناف المضافة</span>
+              <span className="text-base font-black text-brand-success">{importSummary.itemsAdded}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-brand-gray-900 border border-brand-gray-800">
+              <span className="text-brand-gray-400 block text-[11px]">الصفوف غير الصالحة</span>
+              <span className="text-base font-black text-brand-danger">{importSummary.errors.length}</span>
+            </div>
+          </div>
+
+          {importSummary.errors.length > 0 && (
+            <div className="p-3 rounded-xl bg-brand-danger/10 border border-brand-danger/20 space-y-1 text-xs text-brand-danger max-h-36 overflow-y-auto">
+              <span className="font-bold block">ملاحظات على بعض الصفوف:</span>
+              <ul className="list-disc list-inside space-y-0.5 text-[11px]">
+                {importSummary.errors.map((errStr, idx) => (
+                  <li key={idx}>{errStr}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Top Controls & Excel Tools Bar */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-brand-navy/90 border border-brand-sky/20 rounded-3xl p-6 shadow-xl backdrop-blur-xl">
         <div>
           <h2 className="text-xl font-black text-brand-white flex items-center gap-2">
             <Utensils className="w-6 h-6 text-brand-sky" /> إدارة المنيو والأصناف
@@ -364,14 +505,57 @@ export function MenuManager({
           </p>
         </div>
 
-        <Button
-          onClick={() => setShowAddCategory(true)}
-          variant="primary"
-          size="md"
-          className="cursor-pointer shadow-lg shadow-brand-sky/20 font-extrabold text-xs"
-        >
-          <Plus className="w-4 h-4 ml-1" /> إضافة قسم جديد للمنيو
-        </Button>
+        {/* Action Buttons Cluster */}
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Export Excel Button */}
+          <a
+            href={`/api/restaurants/${restaurantId}/menu/export`}
+            download
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-brand-sky/10 border border-brand-sky/30 hover:bg-brand-sky/20 text-brand-sky font-bold text-xs transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4" /> تصدير المنيو (Excel)
+          </a>
+
+          {/* Import Excel Trigger Button */}
+          <label className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-brand-success/10 border border-brand-success/30 hover:bg-brand-success/20 text-brand-success font-bold text-xs transition-all cursor-pointer">
+            {importing ? (
+              <svg className="animate-spin h-4 w-4 text-brand-success" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+            <span>{importing ? "جاري الرفع..." : "استيراد من Excel"}</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              disabled={importing}
+              className="hidden"
+            />
+          </label>
+
+          {/* Download Sample Template Button */}
+          <button
+            type="button"
+            onClick={handleDownloadSampleTemplate}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-brand-gray-900 border border-brand-gray-800 hover:bg-brand-gray-800 text-brand-gray-300 font-bold text-xs transition-all cursor-pointer"
+          >
+            <FileText className="w-4 h-4 text-brand-gray-400" /> تحميل نموذج فارغ
+          </button>
+
+          {/* Add Category Button */}
+          <Button
+            onClick={() => setShowAddCategory(true)}
+            variant="primary"
+            size="md"
+            className="cursor-pointer shadow-lg shadow-brand-sky/20 font-extrabold text-xs mr-auto lg:mr-0"
+          >
+            <Plus className="w-4 h-4 ml-1" /> إضافة قسم جديد
+          </Button>
+        </div>
       </div>
 
       {/* Inline Form to Add Category */}
@@ -424,7 +608,7 @@ export function MenuManager({
             <Utensils className="w-12 h-12 text-brand-gray-500 mx-auto" />
             <h3 className="text-base font-bold text-brand-white">لا توجد أقسام في المنيو بعد</h3>
             <p className="text-xs text-brand-gray-400 max-w-sm mx-auto">
-              قم بإضافة أجزاء وأقسام المنيو الخاصة بمطعمك، ثم اضف الأصناف والوجبات لكل قسم.
+              يمكنك استخدام زر "استيراد من Excel" لرفع المنيو دفعة واحدة، أو البدء بإضافة أقسام يدوياً.
             </p>
             <Button onClick={() => setShowAddCategory(true)} variant="primary" className="mt-2 text-xs">
               <Plus className="w-4 h-4 ml-1" /> إضافة أول قسم للمنيو

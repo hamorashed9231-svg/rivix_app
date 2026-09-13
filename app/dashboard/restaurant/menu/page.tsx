@@ -82,6 +82,7 @@ export default async function RestaurantMenuPage() {
 
       {/* Menu Manager Interactive Client */}
       <MenuManager
+        restaurantId={restaurant.id}
         branchId={defaultBranch.id}
         restaurantName={restaurant.name}
         initialCategories={categories}
