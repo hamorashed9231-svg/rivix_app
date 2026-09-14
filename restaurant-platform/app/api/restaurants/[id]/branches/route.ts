@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getCurrentUser, getRestaurantAccess } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
+
 
 export async function GET(
   request: NextRequest,
@@ -90,6 +92,10 @@ export async function POST(
         },
       },
     })
+
+    revalidatePath("/dashboard/restaurant/branches")
+    revalidatePath("/dashboard/restaurant")
+    revalidatePath("/restaurant/[slug]", "page")
 
     return NextResponse.json(branch, { status: 201 })
   } catch (error: any) {

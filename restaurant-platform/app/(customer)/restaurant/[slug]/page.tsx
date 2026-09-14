@@ -8,6 +8,10 @@ import { RestaurantThemeProvider } from "@/components/RestaurantThemeProvider"
 import { MobileMenuBrowser } from "../../restaurants/[id]/MobileMenuBrowser"
 import { RestaurantReviewsSection } from "@/components/RestaurantReviewsSection"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
+
 export default async function CustomerRestaurantBySlugPage({
   params,
 }: {

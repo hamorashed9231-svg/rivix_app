@@ -5,6 +5,10 @@ import Link from "next/link"
 import { GitFork, ArrowRight, Store } from "lucide-react"
 import { BranchesClient } from "./BranchesClient"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
+
 export default async function BranchesPage() {
   const user = await getCurrentUser()
 

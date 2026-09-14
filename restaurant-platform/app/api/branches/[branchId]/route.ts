@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getCurrentUser, getRestaurantAccess } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
 
 export async function PATCH(
   request: NextRequest,
@@ -54,6 +55,10 @@ export async function PATCH(
         },
       },
     })
+
+    revalidatePath("/dashboard/restaurant/branches")
+    revalidatePath("/dashboard/restaurant")
+    revalidatePath("/restaurant/[slug]", "page")
 
     return NextResponse.json(updatedBranch)
   } catch (error: any) {
@@ -126,6 +131,10 @@ export async function DELETE(
       where: { id: branchId },
     })
 
+    revalidatePath("/dashboard/restaurant/branches")
+    revalidatePath("/dashboard/restaurant")
+    revalidatePath("/restaurant/[slug]", "page")
+
     return NextResponse.json({ success: true, message: "تم حذف الفرع بنجاح" })
   } catch (error: any) {
     console.error("DELETE /api/branches/[branchId] error:", error)
@@ -135,3 +144,4 @@ export async function DELETE(
     )
   }
 }
+
