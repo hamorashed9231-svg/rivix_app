@@ -80,11 +80,15 @@ export function MenuManager({
   const [itemImage, setItemImage] = useState("")
   const [itemAvailable, setItemAvailable] = useState(true)
 
+  // Excel Import Format State ("arabic" | "product_feed")
+  const [menuFormat, setMenuFormat] = useState<"arabic" | "product_feed">("arabic")
+
   // Excel Import State
   const [importing, setImporting] = useState(false)
   const [importSummary, setImportSummary] = useState<{
     categoriesCreated: number
     itemsAdded: number
+    itemsUpdated?: number
     errors: string[]
   } | null>(null)
 
@@ -364,8 +368,13 @@ export function MenuManager({
     const formData = new FormData()
     formData.append("file", file)
 
+    const endpoint =
+      menuFormat === "product_feed"
+        ? `/api/restaurants/${restaurantId}/menu/import-feed`
+        : `/api/restaurants/${restaurantId}/menu/import`
+
     try {
-      const res = await fetch(`/api/restaurants/${restaurantId}/menu/import`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         body: formData,
       })
@@ -378,9 +387,11 @@ export function MenuManager({
         setImportSummary({
           categoriesCreated: data.summary.categoriesCreated,
           itemsAdded: data.summary.itemsAdded,
+          itemsUpdated: data.summary.itemsUpdated || 0,
           errors: data.errors || [],
         })
-        setSuccess(`تمت عملية الاستيراد بنجاح! تم إضافة ${data.summary.itemsAdded} صنف جديد.`)
+        const updatedMsg = data.summary.itemsUpdated ? `، وتحديث ${data.summary.itemsUpdated} صنف` : ""
+        setSuccess(`تمت عملية الاستيراد بنجاح! تم إضافة ${data.summary.itemsAdded} صنف جديد${updatedMsg}.`)
         router.refresh()
       }
     } catch (err) {
@@ -394,6 +405,11 @@ export function MenuManager({
   }
 
   const handleDownloadSampleTemplate = () => {
+    if (menuFormat === "product_feed") {
+      window.location.href = `/api/restaurants/${restaurantId}/menu/template-feed`
+      return
+    }
+
     const sampleData = [
       {
         "اسم القسم": "المقبلات والسلطات",
@@ -466,7 +482,7 @@ export function MenuManager({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <div className="p-3 rounded-xl bg-brand-gray-900 border border-brand-gray-800">
               <span className="text-brand-gray-400 block text-[11px]">الأقسام الجديدة</span>
               <span className="text-base font-black text-brand-sky">{importSummary.categoriesCreated}</span>
@@ -475,6 +491,12 @@ export function MenuManager({
               <span className="text-brand-gray-400 block text-[11px]">الأصناف المضافة</span>
               <span className="text-base font-black text-brand-success">{importSummary.itemsAdded}</span>
             </div>
+            {importSummary.itemsUpdated !== undefined && importSummary.itemsUpdated > 0 && (
+              <div className="p-3 rounded-xl bg-brand-gray-900 border border-brand-gray-800">
+                <span className="text-brand-gray-400 block text-[11px]">الأصناف المُحدّثة</span>
+                <span className="text-base font-black text-purple-400">{importSummary.itemsUpdated}</span>
+              </div>
+            )}
             <div className="p-3 rounded-xl bg-brand-gray-900 border border-brand-gray-800">
               <span className="text-brand-gray-400 block text-[11px]">الصفوف غير الصالحة</span>
               <span className="text-base font-black text-brand-danger">{importSummary.errors.length}</span>
@@ -505,11 +527,32 @@ export function MenuManager({
           </p>
         </div>
 
-        {/* Action Buttons Cluster */}
+        {/* Action Buttons & Format Dropdown Cluster */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Format Selector Dropdown */}
+          <div className="flex items-center gap-2 bg-brand-gray-900 border border-brand-sky/30 rounded-xl px-3 py-2 text-xs">
+            <span className="text-brand-gray-400 font-semibold whitespace-nowrap">صيغة الملف:</span>
+            <select
+              value={menuFormat}
+              onChange={(e) => setMenuFormat(e.target.value as "arabic" | "product_feed")}
+              className="bg-transparent text-brand-sky font-extrabold focus:outline-none cursor-pointer"
+            >
+              <option value="arabic" className="bg-brand-navy text-white">
+                الصيغة العربية (افتراضي)
+              </option>
+              <option value="product_feed" className="bg-brand-navy text-white">
+                صيغة Product Feed (Facebook/Google)
+              </option>
+            </select>
+          </div>
+
           {/* Export Excel Button */}
           <a
-            href={`/api/restaurants/${restaurantId}/menu/export`}
+            href={
+              menuFormat === "product_feed"
+                ? `/api/restaurants/${restaurantId}/menu/export-feed`
+                : `/api/restaurants/${restaurantId}/menu/export`
+            }
             download
             className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-brand-sky/10 border border-brand-sky/30 hover:bg-brand-sky/20 text-brand-sky font-bold text-xs transition-all cursor-pointer"
           >
@@ -543,7 +586,8 @@ export function MenuManager({
             onClick={handleDownloadSampleTemplate}
             className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-brand-gray-900 border border-brand-gray-800 hover:bg-brand-gray-800 text-brand-gray-300 font-bold text-xs transition-all cursor-pointer"
           >
-            <FileText className="w-4 h-4 text-brand-gray-400" /> تحميل نموذج فارغ
+            <FileText className="w-4 h-4 text-brand-gray-400" />
+            {menuFormat === "product_feed" ? "تحميل نموذج Product Feed" : "تحميل نموذج فارغ"}
           </button>
 
           {/* Add Category Button */}
