@@ -26,6 +26,7 @@ export async function getDefaultBranch(restaurantId: string) {
     branch = await prisma.branch.create({
       data: {
         restaurantId,
+        name: "الفرع الرئيسي",
         address: "الفرع الرئيسي",
         phone: "0500000000",
         lat: 24.7136,
@@ -38,3 +39,18 @@ export async function getDefaultBranch(restaurantId: string) {
 
   return branch
 }
+
+export async function getActiveBranches(restaurantId: string) {
+  if (!restaurantId) return []
+
+  return await prisma.branch.findMany({
+    where: {
+      restaurantId,
+      isActive: true,
+    },
+    orderBy: {
+      id: "asc",
+    },
+  })
+}
+
