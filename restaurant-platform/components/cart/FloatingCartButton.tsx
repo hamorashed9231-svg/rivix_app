@@ -26,7 +26,7 @@ export function FloatingCartButton() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-black text-slate-950">{subtotal} ر.س</span>
+          <span className="text-sm font-black text-slate-950">{subtotal} ج.م</span>
           <span className="bg-slate-950/20 p-1 rounded-lg text-slate-950">
             <ArrowLeft className="w-4 h-4" />
           </span>

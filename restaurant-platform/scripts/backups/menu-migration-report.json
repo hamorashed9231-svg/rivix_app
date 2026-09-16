@@ -1,0 +1,343 @@
+{
+  "timestamp": "2026-09-16T13:57:42.356Z",
+  "isDryRun": false,
+  "summary": {
+    "totalRestaurants": 2,
+    "categoryMergeDecisionsCount": 20,
+    "priceConflictsCount": 0,
+    "borderlineMatchesCount": 1
+  },
+  "borderlineCategoryMatches": [
+    {
+      "restaurantName": "عم عيسى",
+      "cat1Name": "وجبات الأطفال",
+      "cat1Id": "cmu1loh0n001xubf0y6clrzh8",
+      "cat2Name": "وجبات عم عيسى",
+      "cat2Id": "cmu1lohow0021ubf048rzowtt",
+      "reason": "Partial name or prefix similarity"
+    }
+  ],
+  "priceConflicts": [],
+  "categoryMergeDecisions": [
+    {
+      "restaurantId": "cmu06wu190009ubhk1unjrgdp",
+      "restaurantName": "مطعم ريفيكس جريل - RIVIX Grill",
+      "canonicalCategoryName": "الأطباق الرئيسية والمشويات",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu06wuvu000hubhkrkxx6vzd"
+      ],
+      "itemCount": 1
+    },
+    {
+      "restaurantId": "cmu06wu190009ubhk1unjrgdp",
+      "restaurantName": "مطعم ريفيكس جريل - RIVIX Grill",
+      "canonicalCategoryName": "الساندوتشات والبرجر",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu06wv3i000jubhkpntkcwir"
+      ],
+      "itemCount": 2
+    },
+    {
+      "restaurantId": "cmu06wu190009ubhk1unjrgdp",
+      "restaurantName": "مطعم ريفيكس جريل - RIVIX Grill",
+      "canonicalCategoryName": "المشروبات والتحلية",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu06wv7d000lubhkifztx1i1"
+      ],
+      "itemCount": 1
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "المحاشي",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1ln4ez0001ubscqzrywlxr"
+      ],
+      "itemCount": 12
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "مشويات الطيور",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1ln5b0000fubscsun4sysy"
+      ],
+      "itemCount": 9
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "الشوربة",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1ln5yn000qubsc1ah2kjqv"
+      ],
+      "itemCount": 5
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "اسكندراني عم عيسى",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1ln6mj000xubscjturaq3c"
+      ],
+      "itemCount": 9
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "أوزان المشويات",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1ln76u0018ubsc6y03m0l3"
+      ],
+      "itemCount": 33
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "الأرز و المكرونة",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1ln8080027ubsc8r3kyr9c"
+      ],
+      "itemCount": 10
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "المقبلات",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1ln9cx002jubschmei6sw9"
+      ],
+      "itemCount": 17
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "سلطات",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1lnbdy0032ubscnukmm3fd"
+      ],
+      "itemCount": 10
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "أضافات",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1lncyc003eubsct0m1vqk3"
+      ],
+      "itemCount": 4
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "سندوتشات عم عيسى",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1lofg60001ubf0hf96jdkh"
+      ],
+      "itemCount": 44
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "عيش باللحمة",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1logci001bubf0lrnosppz"
+      ],
+      "itemCount": 20
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "وجبات الأطفال",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1loh0n001xubf0y6clrzh8"
+      ],
+      "itemCount": 2
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "وجبات عم عيسى",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1lohow0021ubf048rzowtt"
+      ],
+      "itemCount": 9
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "البوكسات",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1loidm002bubf0odbq3ml9"
+      ],
+      "itemCount": 10
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "الفتات",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1loj1k002iubf0kuwxtbtx"
+      ],
+      "itemCount": 2
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "صواني عم عيسى",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1lok0k002mubf0ox58fzj5"
+      ],
+      "itemCount": 3
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "canonicalCategoryName": "الطواجن",
+      "action": "CREATED_NEW",
+      "sourceCategoryIds": [
+        "cmu1lolaf002rubf0fh1mjr4s"
+      ],
+      "itemCount": 19
+    }
+  ],
+  "restaurantsSummary": [
+    {
+      "restaurantId": "cmu06wu190009ubhk1unjrgdp",
+      "restaurantName": "مطعم ريفيكس جريل - RIVIX Grill",
+      "branchesCount": 2,
+      "categoriesBefore": 3,
+      "itemsBefore": 4,
+      "categoriesMerged": [
+        {
+          "canonicalName": "الأطباق الرئيسية والمشويات",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 1
+        },
+        {
+          "canonicalName": "الساندوتشات والبرجر",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 2
+        },
+        {
+          "canonicalName": "المشروبات والتحلية",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 1
+        }
+      ]
+    },
+    {
+      "restaurantId": "cmu0hfvli0001l704lfd0ecf1",
+      "restaurantName": "عم عيسى",
+      "branchesCount": 1,
+      "categoriesBefore": 17,
+      "itemsBefore": 218,
+      "categoriesMerged": [
+        {
+          "canonicalName": "المحاشي",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 12
+        },
+        {
+          "canonicalName": "مشويات الطيور",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 9
+        },
+        {
+          "canonicalName": "الشوربة",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 5
+        },
+        {
+          "canonicalName": "اسكندراني عم عيسى",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 9
+        },
+        {
+          "canonicalName": "أوزان المشويات",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 33
+        },
+        {
+          "canonicalName": "الأرز و المكرونة",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 10
+        },
+        {
+          "canonicalName": "المقبلات",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 17
+        },
+        {
+          "canonicalName": "سلطات",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 10
+        },
+        {
+          "canonicalName": "أضافات",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 4
+        },
+        {
+          "canonicalName": "سندوتشات عم عيسى",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 44
+        },
+        {
+          "canonicalName": "عيش باللحمة",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 20
+        },
+        {
+          "canonicalName": "وجبات الأطفال",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 2
+        },
+        {
+          "canonicalName": "وجبات عم عيسى",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 9
+        },
+        {
+          "canonicalName": "البوكسات",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 10
+        },
+        {
+          "canonicalName": "الفتات",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 2
+        },
+        {
+          "canonicalName": "صواني عم عيسى",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 3
+        },
+        {
+          "canonicalName": "الطواجن",
+          "sourceCategoriesCount": 1,
+          "itemsCount": 19
+        }
+      ]
+    }
+  ]
+}

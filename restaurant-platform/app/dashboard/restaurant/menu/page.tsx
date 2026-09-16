@@ -54,11 +54,20 @@ export default async function RestaurantMenuPage() {
     redirect("/dashboard/restaurant")
   }
 
-  // 4. Fetch menu categories and items for default branch
+  // 4. Fetch menu categories and items for restaurant
   const categories = await prisma.menuCategory.findMany({
-    where: { branchId: defaultBranch.id },
+    where: {
+      OR: [
+        { restaurantId: restaurant.id },
+        { branchId: defaultBranch.id },
+      ],
+    },
     include: {
-      items: true,
+      items: {
+        include: {
+          branchItems: true,
+        },
+      },
     },
     orderBy: { order: "asc" },
   })

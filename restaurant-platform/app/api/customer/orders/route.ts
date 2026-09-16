@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { publishOrderEvent } from "@/lib/notifications-pubsub"
 
 export async function POST(req: Request) {
   try {
@@ -28,21 +29,13 @@ export async function POST(req: Request) {
     }
 
     // 2. Determine Customer User
-    let customerUser = user
-    if (!customerUser) {
-      // Find default customer from DB
-      const defaultCustomer = await prisma.user.findFirst({
-        where: { role: "customer" },
-      })
-      if (defaultCustomer) {
-        customerUser = defaultCustomer
-      } else {
-        return NextResponse.json(
-          { error: "يرجى تسجيل الدخول أولاً لإرسال الطلب" },
-          { status: 401 }
-        )
-      }
+    if (!user) {
+      return NextResponse.json(
+        { error: "يرجى تسجيل الدخول أولاً لإرسال الطلب" },
+        { status: 401 }
+      )
     }
+    const customerUser = user
 
     // 3. Find or Create Delivery Address
     let address = await prisma.address.findFirst({
@@ -86,6 +79,11 @@ export async function POST(req: Request) {
       },
     })
 
+    // Publish Firestore Pub/Sub event for real-time dashboard notification
+    publishOrderEvent(restaurantId, "new_order", newOrder.id).catch((err) =>
+      console.error("PubSub Trigger Error:", err)
+    )
+
     return NextResponse.json(
       {
         message: "تم إنشاء الطلب بنجاح",
@@ -105,18 +103,15 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     const sessionUser = await getCurrentUser()
-    let userId = sessionUser?.id
 
-    if (!userId) {
-      const defaultCustomer = await prisma.user.findFirst({
-        where: { role: "customer" },
-      })
-      userId = defaultCustomer?.id
+    if (!sessionUser?.id) {
+      return NextResponse.json(
+        { error: "يرجى تسجيل الدخول أولاً لعرض الطلبات" },
+        { status: 401 }
+      )
     }
 
-    if (!userId) {
-      return NextResponse.json({ orders: [] })
-    }
+    const userId = sessionUser.id
 
     const orders = await prisma.order.findMany({
       where: { customerId: userId },

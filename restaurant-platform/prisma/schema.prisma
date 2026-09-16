@@ -117,6 +117,7 @@ model Restaurant {
   reviews        Review[]
   staffMembers   RestaurantStaff[]
   paymentNumbers PaymentNumber[]
+  menuCategories MenuCategory[]
 }
 
 model RestaurantStaff {
@@ -156,16 +157,19 @@ model Branch {
   openingHours Json
   isActive     Boolean    @default(true)
 
-  menuCategories MenuCategory[]
-  orders         Order[]
+  menuCategories  MenuCategory[]
+  orders          Order[]
+  branchMenuItems BranchMenuItem[]
 }
 
 model MenuCategory {
-  id       String @id @default(cuid())
-  branchId String
-  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  name     String
-  order    Int    @default(0)
+  id           String      @id @default(cuid())
+  branchId     String?
+  branch       Branch?     @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  order        Int         @default(0)
 
   items MenuItem[]
 }
@@ -180,7 +184,20 @@ model MenuItem {
   image       String?
   isAvailable Boolean      @default(true)
 
-  orderItems OrderItem[]
+  orderItems  OrderItem[]
+  branchItems BranchMenuItem[]
+}
+
+model BranchMenuItem {
+  id            String   @id @default(cuid())
+  branchId      String
+  branch        Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  menuItemId    String
+  menuItem      MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  isAvailable   Boolean  @default(true)
+  priceOverride Float?
+
+  @@unique([branchId, menuItemId])
 }
 
 model Coupon {
@@ -213,6 +230,7 @@ model Order {
   deliveryAddressId  String
   deliveryAddress    Address       @relation("DeliveryAddressOrders", fields: [deliveryAddressId], references: [id])
   driverAssignmentId String?
+  posReferenceId     String?
   paymentMethod      PaymentMethod @default(cash_on_delivery)
   paymentProofImage  String?
   paymentStatus      PaymentStatus @default(not_required)

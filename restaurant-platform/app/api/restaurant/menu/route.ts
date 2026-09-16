@@ -11,16 +11,17 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { action, branchId, categoryName, categoryId, name, description, price, image } = body
+    const { action, restaurantId, branchId, categoryName, categoryId, name, description, price, image } = body
 
     if (action === "create_category") {
-      if (!branchId || !categoryName) {
+      if ((!restaurantId && !branchId) || !categoryName) {
         return NextResponse.json({ error: "بيانات التصنيف غير مكتملة" }, { status: 400 })
       }
 
       const newCategory = await prisma.menuCategory.create({
         data: {
-          branchId,
+          restaurantId: restaurantId || null,
+          branchId: branchId || null,
           name: categoryName,
           order: 1,
         },

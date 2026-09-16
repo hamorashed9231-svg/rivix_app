@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 import { 
   Bell, 
   CheckCircle, 
@@ -53,13 +55,49 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
     }
   }
 
-  // Auto-refresh polling every 10 seconds
+  // Auto-refresh polling backup
   useEffect(() => {
     const interval = setInterval(() => {
       refreshOrders()
-    }, 10000)
+    }, 15000)
     return () => clearInterval(interval)
   }, [])
+
+  // Real-time Firestore Pub/Sub Listener
+  useEffect(() => {
+    if (!restaurantId) return
+
+    try {
+      const eventsRef = collection(db, "restaurants", restaurantId, "events")
+      const q = query(eventsRef, orderBy("createdTime", "desc"), limit(5))
+
+      let isInitial = true
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (isInitial) {
+          isInitial = false
+          return
+        }
+
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const eventData = change.doc.data()
+            if (eventData.type === "new_order") {
+              try {
+                const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3")
+                audio.play().catch(() => {})
+              } catch (e) {}
+
+              refreshOrders()
+            }
+          }
+        })
+      })
+
+      return () => unsubscribe()
+    } catch (e) {
+      console.error("Firestore Listener Error:", e)
+    }
+  }, [restaurantId])
 
   const pendingOrders = orders.filter((o) => o.status === "pending")
   const acceptedOrders = orders.filter((o) => o.status === "accepted" || o.status === "preparing" || o.status === "ready" || o.status === "out_for_delivery")
@@ -277,7 +315,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
       {/* Orders Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {displayedOrders.map((order) => {
-          const isPosForwarded = order.driverAssignmentId?.startsWith("POS-EXT-")
+          const isPosForwarded = Boolean(order.posReferenceId || order.driverAssignmentId?.startsWith("POS-EXT-"))
 
           return (
             <div
@@ -355,7 +393,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                     {order.items?.map((item: any) => (
                       <div key={item.id} className="flex items-center justify-between text-xs bg-slate-950/60 p-2 rounded border border-slate-800/50">
                         <span className="text-white font-medium">x{item.quantity} {item.menuItem?.name}</span>
-                        <span className="font-bold text-cyan-400">{item.price * item.quantity} ر.س</span>
+                        <span className="font-bold text-cyan-400">{item.price * item.quantity} ج.م</span>
                       </div>
                     ))}
                   </div>
@@ -366,7 +404,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
               <div className="pt-4 border-t border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-400">الإجمالي النهائي:</span>
-                  <span className="text-lg font-black text-white">{order.totalPrice} <span className="text-xs font-normal text-slate-400">ر.س</span></span>
+                  <span className="text-lg font-black text-white">{order.totalPrice} <span className="text-xs font-normal text-slate-400">ج.م</span></span>
                 </div>
 
                 {/* Actions for Pending Orders */}
@@ -458,14 +496,14 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                 {selectedOrderDetails.items?.map((item: any) => (
                   <div key={item.id} className="flex justify-between border-b border-slate-800/60 pb-1">
                     <span className="text-white">x{item.quantity} {item.menuItem?.name}</span>
-                    <span className="text-cyan-400 font-bold">{item.price * item.quantity} ر.س</span>
+                    <span className="text-cyan-400 font-bold">{item.price * item.quantity} ج.م</span>
                   </div>
                 ))}
               </div>
 
               <div className="flex justify-between text-sm font-black text-white pt-2">
                 <span>الإجمالي الكلي:</span>
-                <span className="text-cyan-300">{selectedOrderDetails.totalPrice} ر.س</span>
+                <span className="text-cyan-300">{selectedOrderDetails.totalPrice} ج.م</span>
               </div>
             </div>
 
@@ -500,7 +538,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                 <div key={idx} className="bg-slate-900 p-3 rounded-xl flex items-center justify-between text-xs">
                   <div>
                     <h5 className="font-bold text-white">{item.name}</h5>
-                    <p className="text-cyan-400 font-extrabold">{item.price * item.quantity} ر.س</p>
+                    <p className="text-cyan-400 font-extrabold">{item.price * item.quantity} ج.م</p>
                   </div>
 
                   <div className="flex items-center gap-2 bg-slate-950 p-1 rounded-lg">
@@ -531,7 +569,7 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
             <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-sm">
               <span className="text-slate-400">الإجمالي الجديد:</span>
               <span className="font-black text-cyan-300">
-                {editItems.reduce((sum, i) => sum + i.price * i.quantity, 0)} ر.س
+                {editItems.reduce((sum, i) => sum + i.price * i.quantity, 0)} ج.م
               </span>
             </div>
 

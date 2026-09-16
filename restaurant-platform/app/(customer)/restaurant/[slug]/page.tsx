@@ -31,24 +31,29 @@ export default async function CustomerRestaurantBySlugPage({
   const defaultBranch = await getDefaultBranch(restaurant.id)
 
   // 2. Fetch menu categories and items for default branch (filtering isAvailable: true)
+  // 2. Fetch menu categories for restaurant and items available in default branch
   let menuCategories: any[] = []
-  if (defaultBranch) {
-    menuCategories = await prisma.menuCategory.findMany({
-      where: {
-        branchId: defaultBranch.id,
-      },
-      include: {
-        items: {
-          where: {
-            isAvailable: true,
-          },
+  menuCategories = await prisma.menuCategory.findMany({
+    where: {
+      OR: [
+        { restaurantId: restaurant.id },
+        ...(defaultBranch ? [{ branchId: defaultBranch.id }] : []),
+      ],
+    },
+    include: {
+      items: {
+        where: {
+          isAvailable: true,
+        },
+        include: {
+          branchItems: defaultBranch ? { where: { branchId: defaultBranch.id } } : false,
         },
       },
-      orderBy: {
-        order: "asc",
-      },
-    })
-  }
+    },
+    orderBy: {
+      order: "asc",
+    },
+  })
 
   // Check if restaurant has any available items in menu
   const availableCategories = menuCategories.filter(

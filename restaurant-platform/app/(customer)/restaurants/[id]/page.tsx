@@ -16,6 +16,16 @@ export default async function RestaurantDetailPage({
   const restaurant = await prisma.restaurant.findUnique({
     where: { id },
     include: {
+      menuCategories: {
+        include: {
+          items: {
+            include: {
+              branchItems: true,
+            },
+          },
+        },
+        orderBy: { order: "asc" },
+      },
       branches: {
         include: {
           menuCategories: {
@@ -90,11 +100,11 @@ export default async function RestaurantDetailPage({
       </div>
 
       {/* Mobile Interactive Menu Browser */}
-      {defaultBranch?.menuCategories ? (
+      {(restaurant.menuCategories && restaurant.menuCategories.length > 0) || defaultBranch?.menuCategories ? (
         <MobileMenuBrowser
           restaurantId={restaurant.id}
           restaurantName={restaurant.name}
-          categories={defaultBranch.menuCategories}
+          categories={restaurant.menuCategories && restaurant.menuCategories.length > 0 ? restaurant.menuCategories : defaultBranch?.menuCategories || []}
         />
       ) : (
         <div className="p-8 text-center text-xs text-slate-500">لا توجد أصناف مضافة حالياً.</div>

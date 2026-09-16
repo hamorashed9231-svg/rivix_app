@@ -37,7 +37,7 @@ export async function POST(
       where: { id },
       data: {
         status: "accepted",
-        driverAssignmentId: externalSystemRef,
+        posReferenceId: externalSystemRef,
       },
       include: {
         customer: { select: { name: true, phone: true } },

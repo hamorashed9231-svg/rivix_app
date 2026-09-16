@@ -97,12 +97,12 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
                 className="w-full bg-slate-900 border border-slate-700 px-3 py-2.5 rounded-lg text-white text-xs focus:outline-none focus:border-cyan-400"
               >
                 <option value="percentage">نسبة مئوية (%)</option>
-                <option value="fixed">مبلغ ثابت (ر.س)</option>
+                <option value="fixed">مبلغ ثابت (ج.م)</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-slate-300 mb-1 font-semibold">قيمة الخصم ({discountType === "percentage" ? "%" : "ر.س"})</label>
+              <label className="block text-slate-300 mb-1 font-semibold">قيمة الخصم ({discountType === "percentage" ? "%" : "ج.م"})</label>
               <input
                 type="number"
                 step="0.5"
@@ -115,7 +115,7 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
             </div>
 
             <div>
-              <label className="block text-slate-300 mb-1 font-semibold">الحد الأدنى لقيمة الطلب (ر.س)</label>
+              <label className="block text-slate-300 mb-1 font-semibold">الحد الأدنى لقيمة الطلب (ج.م)</label>
               <input
                 type="number"
                 placeholder="مثال: 50 (0 لعدم التحديد)"
@@ -163,9 +163,9 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
                 <tr key={c.id} className="hover:bg-slate-900/40 transition-colors">
                   <td className="px-4 py-4 font-mono font-extrabold text-cyan-400 text-base">{c.code}</td>
                   <td className="px-4 py-4 font-bold text-white">
-                    {c.discountValue} {c.discountType === "percentage" ? "%" : "ر.س"}
+                    {c.discountValue} {c.discountType === "percentage" ? "%" : "ج.م"}
                   </td>
-                  <td className="px-4 py-4 text-xs text-slate-300">{c.minOrderAmount} ر.س</td>
+                  <td className="px-4 py-4 text-xs text-slate-300">{c.minOrderAmount} ج.م</td>
                   <td className="px-4 py-4 text-xs text-slate-400">
                     {c.restaurant ? c.restaurant.name : "شامل كافة مطاعم المنصة 🌐"}
                   </td>

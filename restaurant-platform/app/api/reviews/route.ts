@@ -5,18 +5,12 @@ import { prisma } from "@/lib/prisma"
 export async function POST(req: Request) {
   try {
     const sessionUser = await getCurrentUser()
-    let userId = sessionUser?.id
 
-    if (!userId) {
-      const defaultCustomer = await prisma.user.findFirst({
-        where: { role: "customer" },
-      })
-      userId = defaultCustomer?.id
-    }
-
-    if (!userId) {
+    if (!sessionUser?.id) {
       return NextResponse.json({ error: "يرجى تسجيل الدخول لتقديم التقييم" }, { status: 401 })
     }
+
+    const userId = sessionUser.id
 
     const body = await req.json()
     const { orderId, rating, foodRating, deliveryRating, comment } = body

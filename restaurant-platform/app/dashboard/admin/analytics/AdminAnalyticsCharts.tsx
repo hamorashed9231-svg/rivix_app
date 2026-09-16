@@ -65,7 +65,7 @@ export function AdminAnalyticsCharts({
               <Area
                 type="monotone"
                 dataKey="sales"
-                name="إجمالي المبيعات (ر.س)"
+                name="إجمالي المبيعات (ج.م)"
                 stroke="#00D2FF"
                 strokeWidth={3}
                 fillOpacity={1}
@@ -74,7 +74,7 @@ export function AdminAnalyticsCharts({
               <Area
                 type="monotone"
                 dataKey="commission"
-                name="صافي عمولة المنصة (ر.س)"
+                name="صافي عمولة المنصة (ج.م)"
                 stroke="#10B981"
                 strokeWidth={2}
                 fillOpacity={1}
@@ -105,7 +105,7 @@ export function AdminAnalyticsCharts({
                 <Tooltip
                   contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff" }}
                 />
-                <Bar dataKey="sales" name="المبيعات الإجمالية (ر.س)" fill="#0091FF" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="sales" name="المبيعات الإجمالية (ج.م)" fill="#0091FF" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

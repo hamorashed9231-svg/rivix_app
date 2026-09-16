@@ -13,11 +13,13 @@ import {
 import { useRouter } from 'expo-router';
 import { useRestaurant } from '@/context/RestaurantContext';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { restaurant, primaryColor, secondaryColor } = useRestaurant();
   const { login } = useAuth();
+  const { t, isRTL } = useLanguage();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +28,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      setError('يرجى ملء جميع الحقول المطلوبة');
+      setError(t('requiredField'));
       return;
     }
 
@@ -37,7 +39,7 @@ export default function LoginScreen() {
       router.replace('/home');
     } catch (err: any) {
       console.error('Login error:', err);
-      const msg = err.response?.data?.message || 'فشل تسجيل الدخول، يرجى التأكد من بيانات الاعتماد';
+      const msg = err.response?.data?.message || t('loginError');
       setError(msg);
     } finally {
       setLoading(false);
@@ -50,26 +52,37 @@ export default function LoginScreen() {
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={[styles.backButtonText, { color: primaryColor }]}>← عودة</Text>
+        <TouchableOpacity
+          style={[styles.backButton, isRTL ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]}
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.backButtonText, { color: primaryColor }]}>
+            {isRTL ? '← عودة' : '← Back'}
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.title}>تسجيل الدخول</Text>
-          <Text style={styles.subtitle}>أهلاً بعودتك إلى {restaurant?.name || 'مطعمنا'}</Text>
+          <Text style={[styles.title, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {t('loginTitle')}
+          </Text>
+          <Text style={[styles.subtitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {t('welcomeBack')} {restaurant?.name || t('appName')}
+          </Text>
         </View>
 
         {error ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={[styles.errorText, { textAlign: isRTL ? 'right' : 'left' }]}>{error}</Text>
           </View>
         ) : null}
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>البريد الإلكتروني</Text>
+            <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {t('emailLabel')}
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
               placeholder="example@mail.com"
               value={email}
               onChangeText={setEmail}
@@ -79,9 +92,11 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>كلمة المرور</Text>
+            <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {t('passwordLabel')}
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
               placeholder="••••••••"
               value={password}
               onChangeText={setPassword}
@@ -98,14 +113,16 @@ export default function LoginScreen() {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.submitButtonText}>تسجيل الدخول</Text>
+              <Text style={styles.submitButtonText}>{t('loginButton')}</Text>
             )}
           </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>ليس لديك حساب؟ </Text>
+          <View style={[styles.footer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Text style={styles.footerText}>{t('noAccount')} </Text>
             <TouchableOpacity onPress={() => router.push('/register')}>
-              <Text style={[styles.linkText, { color: secondaryColor }]}>إنشاء حساب جديد</Text>
+              <Text style={[styles.linkText, { color: secondaryColor || primaryColor }]}>
+                {t('registerButton')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -125,7 +142,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backButton: {
-    alignSelf: 'flex-end',
     marginBottom: 20,
   },
   backButtonText: {
@@ -140,12 +156,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1A202C',
     marginBottom: 8,
-    textAlign: 'right',
   },
   subtitle: {
     fontSize: 15,
     color: '#718096',
-    textAlign: 'right',
   },
   errorBox: {
     backgroundColor: '#FFF5F5',
@@ -157,7 +171,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#E53E3E',
-    textAlign: 'right',
     fontSize: 14,
   },
   form: {
@@ -170,7 +183,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#4A5568',
-    textAlign: 'right',
   },
   input: {
     borderWidth: 1,
@@ -180,7 +192,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     backgroundColor: '#F8FAFC',
-    textAlign: 'right',
   },
   submitButton: {
     paddingVertical: 14,
@@ -195,7 +206,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   footer: {
-    flexDirection: 'row-reverse',
     justifyContent: 'center',
     marginTop: 16,
   },

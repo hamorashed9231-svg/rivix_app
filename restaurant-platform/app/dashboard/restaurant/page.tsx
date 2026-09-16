@@ -121,7 +121,7 @@ export default async function RestaurantDashboardPage() {
             <span className="text-xs font-semibold uppercase text-slate-400">إجمالي المبيعات</span>
             <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><DollarSign className="w-5 h-5" /></div>
           </div>
-          <p className="text-2xl font-black text-white mt-3">{totalSales.toLocaleString()} <span className="text-sm font-normal text-slate-400">ر.س</span></p>
+          <p className="text-2xl font-black text-white mt-3">{totalSales.toLocaleString()} <span className="text-sm font-normal text-slate-400">ج.م</span></p>
         </div>
 
         <div className="bg-[#0B192C] border border-slate-800 rounded-xl p-5 shadow-lg">

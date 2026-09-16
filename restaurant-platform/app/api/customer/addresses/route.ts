@@ -22,16 +22,12 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser()
-    let userId = user?.id
 
-    if (!userId) {
-      const defaultCust = await prisma.user.findFirst({ where: { role: "customer" } })
-      if (defaultCust) userId = defaultCust.id
+    if (!user?.id) {
+      return NextResponse.json({ error: "يرجى تسجيل الدخول أولاً لإضافة عنوان" }, { status: 401 })
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: "يرجى تسجيل الدخول" }, { status: 401 })
-    }
+    const userId = user.id
 
     const body = await req.json()
     const { label, details, lat, lng } = body

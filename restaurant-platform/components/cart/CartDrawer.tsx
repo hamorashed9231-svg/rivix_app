@@ -109,7 +109,7 @@ export function CartDrawer() {
                         {item.name}
                       </h4>
                       <p className="text-xs font-black text-cyan-400 mt-1">
-                        {item.price} ر.س
+                        {item.price} ج.م
                       </p>
 
                       {/* Quantity Controls */}
@@ -155,7 +155,7 @@ export function CartDrawer() {
             <div className="p-4 border-t border-slate-800 bg-slate-950/80 space-y-3">
               <div className="flex items-center justify-between text-xs font-bold px-1">
                 <span className="text-slate-400">المجموع الفرعي ({totalItems} عناصر):</span>
-                <span className="text-base font-black text-cyan-400">{subtotal} ر.س</span>
+                <span className="text-base font-black text-cyan-400">{subtotal} ج.م</span>
               </div>
 
               <div className="space-y-2">

@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useRestaurant } from '@/context/RestaurantContext';
 import { useCart, CartItem } from '@/context/CartContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 const FALLBACK_ITEM_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400';
 
@@ -20,12 +21,13 @@ export default function CartScreen() {
   const router = useRouter();
   const { primaryColor } = useRestaurant();
   const { items, updateQuantity, removeItem, getTotal, clearCart } = useCart();
+  const { t, isRTL } = useLanguage();
 
   const subtotal = getTotal();
 
   const renderCartItem = ({ item }: { item: CartItem }) => {
     return (
-      <View style={styles.cartCard}>
+      <View style={[styles.cartCard, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <Image
           source={{ uri: item.image || FALLBACK_ITEM_IMAGE }}
           style={styles.itemImage}
@@ -33,8 +35,8 @@ export default function CartScreen() {
         />
 
         <View style={styles.itemDetails}>
-          <View style={styles.itemHeader}>
-            <Text style={styles.itemName}>{item.name}</Text>
+          <View style={[styles.itemHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.itemName, { textAlign: isRTL ? 'right' : 'left' }]}>{item.name}</Text>
             <TouchableOpacity
               onPress={() => removeItem(item.menuItemId)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -43,11 +45,11 @@ export default function CartScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={[styles.itemPrice, { color: primaryColor }]}>
-            {item.price} جنيه
+          <Text style={[styles.itemPrice, { color: primaryColor, textAlign: isRTL ? 'right' : 'left' }]}>
+            {item.price} {t('currency')}
           </Text>
 
-          <View style={styles.quantityContainer}>
+          <View style={[styles.quantityContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <TouchableOpacity
               style={styles.qtyButton}
               onPress={() => updateQuantity(item.menuItemId, item.quantity - 1)}
@@ -64,8 +66,8 @@ export default function CartScreen() {
               <Text style={[styles.qtyButtonText, { color: '#FFFFFF' }]}>+</Text>
             </TouchableOpacity>
 
-            <Text style={styles.itemTotalPrice}>
-              الإجمالي: {item.price * item.quantity} جنيه
+            <Text style={[styles.itemTotalPrice, isRTL ? { marginRight: 'auto' } : { marginLeft: 'auto' }]}>
+              {t('total')}: {item.price * item.quantity} {t('currency')}
             </Text>
           </View>
         </View>
@@ -76,25 +78,26 @@ export default function CartScreen() {
   if (items.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
+        <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={[styles.backButtonText, { color: primaryColor }]}>← عودة</Text>
+            <Text style={[styles.backButtonText, { color: primaryColor }]}>
+              {isRTL ? '← عودة' : '← Back'}
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>عربة التسوق</Text>
+          <Text style={styles.headerTitle}>{t('cartTitle')}</Text>
+          <View style={{ width: 40 }} />
         </View>
 
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🛒</Text>
-          <Text style={styles.emptyTitle}>عربتك فارغة حالياً</Text>
-          <Text style={styles.emptySubtitle}>
-            لم تقم بإضافة أي أصناف إلى العربة بعد. تصفح القائمة واختر وجباتك المفضلة!
-          </Text>
+          <Text style={styles.emptyTitle}>{t('emptyCartTitle')}</Text>
+          <Text style={styles.emptySubtitle}>{t('emptyCartSubtitle')}</Text>
           <TouchableOpacity
             style={[styles.browseButton, { backgroundColor: primaryColor }]}
             onPress={() => router.replace('/home')}
             activeOpacity={0.8}
           >
-            <Text style={styles.browseButtonText}>تصفح المنيو</Text>
+            <Text style={styles.browseButtonText}>{t('browseMenu')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -106,13 +109,15 @@ export default function CartScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={[styles.backButtonText, { color: primaryColor }]}>← عودة</Text>
+          <Text style={[styles.backButtonText, { color: primaryColor }]}>
+            {isRTL ? '← عودة' : '← Back'}
+          </Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>عربة التسوق</Text>
+        <Text style={styles.headerTitle}>{t('cartTitle')}</Text>
         <TouchableOpacity onPress={clearCart}>
-          <Text style={styles.clearAllText}>مسح الكل</Text>
+          <Text style={styles.clearAllText}>{t('clearCart')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -127,10 +132,10 @@ export default function CartScreen() {
 
       {/* Bottom Summary Bar */}
       <View style={styles.bottomBar}>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>المجموع الفرعي:</Text>
+        <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <Text style={styles.summaryLabel}>{t('subtotal')}:</Text>
           <Text style={[styles.summaryValue, { color: primaryColor }]}>
-            {subtotal} جنيه
+            {subtotal} {t('currency')}
           </Text>
         </View>
 
@@ -139,7 +144,7 @@ export default function CartScreen() {
           onPress={() => router.push('/checkout')}
           activeOpacity={0.8}
         >
-          <Text style={styles.checkoutButtonText}>متابعة الطلب</Text>
+          <Text style={styles.checkoutButtonText}>{t('proceedToCheckout')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -153,7 +158,6 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
-    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -175,6 +179,7 @@ const styles = StyleSheet.create({
   clearAllText: {
     color: '#EF4444',
     fontSize: 14,
+    fontWeight: 'bold',
   },
   listContent: {
     padding: 16,
@@ -184,7 +189,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 12,
-    flexDirection: 'row-reverse',
     gap: 12,
     elevation: 2,
     shadowColor: '#000',
@@ -203,7 +207,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   itemHeader: {
-    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
@@ -211,7 +214,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: '#1E293B',
-    textAlign: 'right',
   },
   deleteText: {
     fontSize: 16,
@@ -219,11 +221,9 @@ const styles = StyleSheet.create({
   itemPrice: {
     fontSize: 14,
     fontWeight: 'bold',
-    textAlign: 'right',
     marginTop: 2,
   },
   quantityContainer: {
-    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 10,
     marginTop: 8,
@@ -251,7 +251,6 @@ const styles = StyleSheet.create({
   itemTotalPrice: {
     fontSize: 13,
     color: '#64748B',
-    marginRight: 'auto',
   },
   emptyContainer: {
     flex: 1,
@@ -295,7 +294,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   summaryRow: {
-    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
   },

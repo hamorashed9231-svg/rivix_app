@@ -147,12 +147,12 @@ export default async function DashboardOrderTrackingPage({
           {order.items?.map((item: any) => (
             <div key={item.id} className="flex justify-between items-center bg-slate-900 p-3 rounded-xl">
               <span className="text-white font-medium">x{item.quantity} {item.menuItem?.name}</span>
-              <span className="font-extrabold text-cyan-400">{item.price * item.quantity} ر.س</span>
+              <span className="font-extrabold text-cyan-400">{item.price * item.quantity} ج.م</span>
             </div>
           ))}
           <div className="flex justify-between items-center pt-3 text-sm font-black text-white border-t border-slate-800">
             <span>إجمالي الفاتورة:</span>
-            <span className="text-cyan-300 text-lg">{order.totalPrice} ر.س</span>
+            <span className="text-cyan-300 text-lg">{order.totalPrice} ج.م</span>
           </div>
         </div>
       </div>

@@ -13,11 +13,13 @@ import {
 import { useRouter } from 'expo-router';
 import { useRestaurant } from '@/context/RestaurantContext';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { restaurant, primaryColor, secondaryColor } = useRestaurant();
   const { register } = useAuth();
+  const { t, isRTL } = useLanguage();
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -27,24 +29,23 @@ export default function RegisterScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const validatePhone = (phoneNumber: string): boolean => {
-    // Egyptian mobile number format check: 01xxxxxxxxx (11 digits starting with 01)
     const phoneRegex = /^01[0125][0-9]{8}$/;
     return phoneRegex.test(phoneNumber);
   };
 
   const handleRegister = async () => {
     if (!name.trim() || !phone.trim() || !email.trim() || !password.trim()) {
-      setError('يرجى ملء جميع الحقول المطلوبة');
+      setError(t('requiredField'));
       return;
     }
 
     if (!validatePhone(phone.trim())) {
-      setError('رقم الهاتف يجب أن يكون بصيغة 01xxxxxxxxx (11 رقم)');
+      setError(isRTL ? 'رقم الهاتف يجب أن يكون بصيغة 01xxxxxxxxx (11 رقم)' : 'Phone number must be in format 01xxxxxxxxx (11 digits)');
       return;
     }
 
     if (password.length < 6) {
-      setError('كلمة المرور يجب أن لا تقل عن 6 أحرف');
+      setError(t('shortPassword'));
       return;
     }
 
@@ -55,7 +56,7 @@ export default function RegisterScreen() {
       router.replace('/home');
     } catch (err: any) {
       console.error('Registration error:', err);
-      const msg = err.response?.data?.message || 'فشل إنشاء الحساب، يرجى المحاولة لاحقاً';
+      const msg = err.response?.data?.message || t('registerError');
       setError(msg);
     } finally {
       setLoading(false);
@@ -68,36 +69,49 @@ export default function RegisterScreen() {
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={[styles.backButtonText, { color: primaryColor }]}>← عودة</Text>
+        <TouchableOpacity
+          style={[styles.backButton, isRTL ? { alignSelf: 'flex-end' } : { alignSelf: 'flex-start' }]}
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.backButtonText, { color: primaryColor }]}>
+            {isRTL ? '← عودة' : '← Back'}
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.title}>إنشاء حساب جديد</Text>
-          <Text style={styles.subtitle}>انضم إلينا للاستمتاع بخدمات {restaurant?.name || 'مطعمنا'}</Text>
+          <Text style={[styles.title, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {t('registerTitle')}
+          </Text>
+          <Text style={[styles.subtitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {t('welcomeBack')} {restaurant?.name || t('appName')}
+          </Text>
         </View>
 
         {error ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={[styles.errorText, { textAlign: isRTL ? 'right' : 'left' }]}>{error}</Text>
           </View>
         ) : null}
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>الاسم بالكامل</Text>
+            <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {t('nameLabel')}
+            </Text>
             <TextInput
-              style={styles.input}
-              placeholder="أحمد محمد"
+              style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
+              placeholder={isRTL ? 'أحمد محمد' : 'John Doe'}
               value={name}
               onChangeText={setName}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>رقم الهاتف (إجباري 01xxxxxxxxx)</Text>
+            <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {t('phoneLabel')} (01xxxxxxxxx)
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
               placeholder="01012345678"
               value={phone}
               onChangeText={setPhone}
@@ -107,9 +121,11 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>البريد الإلكتروني</Text>
+            <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {t('emailLabel')}
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
               placeholder="example@mail.com"
               value={email}
               onChangeText={setEmail}
@@ -119,9 +135,11 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>كلمة المرور</Text>
+            <Text style={[styles.label, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {t('passwordLabel')}
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
               placeholder="••••••••"
               value={password}
               onChangeText={setPassword}
@@ -138,14 +156,16 @@ export default function RegisterScreen() {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.submitButtonText}>إنشاء الحساب</Text>
+              <Text style={styles.submitButtonText}>{t('registerButton')}</Text>
             )}
           </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>لديك حساب بالفعل؟ </Text>
+          <View style={[styles.footer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Text style={styles.footerText}>{t('hasAccount')} </Text>
             <TouchableOpacity onPress={() => router.push('/login')}>
-              <Text style={[styles.linkText, { color: secondaryColor }]}>تسجيل الدخول</Text>
+              <Text style={[styles.linkText, { color: secondaryColor || primaryColor }]}>
+                {t('loginButton')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -165,7 +185,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backButton: {
-    alignSelf: 'flex-end',
     marginBottom: 20,
   },
   backButtonText: {
@@ -180,12 +199,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1A202C',
     marginBottom: 8,
-    textAlign: 'right',
   },
   subtitle: {
     fontSize: 15,
     color: '#718096',
-    textAlign: 'right',
   },
   errorBox: {
     backgroundColor: '#FFF5F5',
@@ -197,7 +214,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#E53E3E',
-    textAlign: 'right',
     fontSize: 14,
   },
   form: {
@@ -210,7 +226,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#4A5568',
-    textAlign: 'right',
   },
   input: {
     borderWidth: 1,
@@ -220,7 +235,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     backgroundColor: '#F8FAFC',
-    textAlign: 'right',
   },
   submitButton: {
     paddingVertical: 14,
@@ -235,7 +249,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   footer: {
-    flexDirection: 'row-reverse',
     justifyContent: 'center',
     marginTop: 16,
   },

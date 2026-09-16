@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Restaurants Events Collection (Pub/Sub for Order Notifications)
+    match /restaurants/{restaurantId}/events/{eventId} {
+      // Allow authenticated clients or public subscribers to read recent events for their restaurant
+      allow read: if request.auth != null || true;
+      
+      // Allow server/client to write lightweight event documents
+      allow create: if request.resource.data.type in ['new_order', 'order_status_changed']
+                    && request.resource.data.orderId != null;
+                    
+      // Prevent updating or deleting event logs
+      allow update, delete: if false;
+    }
+    
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

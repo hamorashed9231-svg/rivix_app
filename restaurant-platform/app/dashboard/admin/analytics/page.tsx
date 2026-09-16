@@ -114,7 +114,7 @@ export default async function AdminAnalyticsPage() {
             <span className="text-xs font-semibold uppercase text-slate-400">إجمالي مبيعات المنصة</span>
             <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400"><DollarSign className="w-5 h-5" /></div>
           </div>
-          <p className="text-2xl font-black text-white mt-3">{totalGrossSales.toLocaleString()} <span className="text-sm font-normal text-slate-400">ر.س</span></p>
+          <p className="text-2xl font-black text-white mt-3">{totalGrossSales.toLocaleString()} <span className="text-sm font-normal text-slate-400">ج.م</span></p>
           <p className="text-xs text-cyan-400 mt-2">عبر كافة المطاعم والطلبات</p>
         </div>
 
@@ -123,7 +123,7 @@ export default async function AdminAnalyticsPage() {
             <span className="text-xs font-semibold uppercase text-slate-400">صافي عمولات المنصة المستحقة</span>
             <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><TrendingUp className="w-5 h-5" /></div>
           </div>
-          <p className="text-2xl font-black text-emerald-400 mt-3">{Math.round(totalPlatformCommission).toLocaleString()} <span className="text-sm font-normal text-slate-400">ر.س</span></p>
+          <p className="text-2xl font-black text-emerald-400 mt-3">{Math.round(totalPlatformCommission).toLocaleString()} <span className="text-sm font-normal text-slate-400">ج.م</span></p>
           <p className="text-xs text-emerald-300 mt-2 font-medium">بمتوسط نسبة عمولة 12.5%</p>
         </div>
 
@@ -141,7 +141,7 @@ export default async function AdminAnalyticsPage() {
             <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400"><Building2 className="w-5 h-5" /></div>
           </div>
           <p className="text-2xl font-black text-white mt-3">
-            {orders.length > 0 ? Math.round(totalGrossSales / orders.length) : 0} <span className="text-sm font-normal text-slate-400">ر.س</span>
+            {orders.length > 0 ? Math.round(totalGrossSales / orders.length) : 0} <span className="text-sm font-normal text-slate-400">ج.م</span>
           </p>
         </div>
       </div>

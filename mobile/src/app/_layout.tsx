@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { RestaurantProvider, useRestaurant } from '@/context/RestaurantContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 function RootLayoutContent() {
   const { loading, restaurant, primaryColor } = useRestaurant();
@@ -15,7 +16,7 @@ function RootLayoutContent() {
           <Image source={{ uri: restaurant.logo }} style={styles.logo} resizeMode="contain" />
         ) : (
           <Text style={[styles.splashTitle, { color: primaryColor }]}>
-            {restaurant?.name || 'جاري التحميل...'}
+            {restaurant?.name || 'Rivix Mobile'}
           </Text>
         )}
         <ActivityIndicator size="large" color={primaryColor} style={styles.spinner} />
@@ -35,13 +36,15 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   return (
-    <RestaurantProvider>
-      <AuthProvider>
-        <CartProvider>
-          <RootLayoutContent />
-        </CartProvider>
-      </AuthProvider>
-    </RestaurantProvider>
+    <LanguageProvider>
+      <RestaurantProvider>
+        <AuthProvider>
+          <CartProvider>
+            <RootLayoutContent />
+          </CartProvider>
+        </AuthProvider>
+      </RestaurantProvider>
+    </LanguageProvider>
   );
 }
 

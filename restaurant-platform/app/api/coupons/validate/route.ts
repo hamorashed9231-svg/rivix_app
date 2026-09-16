@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     // Check minimum order amount
     if (subtotal < coupon.minOrderAmount) {
       return NextResponse.json(
-        { error: `الحد الأدنى لاستخدام هذا الكوبون هو ${coupon.minOrderAmount} ر.س` },
+        { error: `الحد الأدنى لاستخدام هذا الكوبون هو ${coupon.minOrderAmount} ج.م` },
         { status: 400 }
       )
     }

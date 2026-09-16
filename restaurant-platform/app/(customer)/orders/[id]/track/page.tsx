@@ -183,12 +183,12 @@ export default function MobileOrderTrackingPage({
           {order.items?.map((item: any) => (
             <div key={item.id} className="flex justify-between text-slate-300 py-1">
               <span>x{item.quantity} {item.menuItem?.name}</span>
-              <span className="font-bold text-white">{item.price * item.quantity} ر.س</span>
+              <span className="font-bold text-white">{item.price * item.quantity} ج.م</span>
             </div>
           ))}
           <div className="flex justify-between font-black text-cyan-400 text-sm pt-2 border-t border-slate-800">
             <span>الإجمالي الكلي:</span>
-            <span>{order.totalPrice} ر.س</span>
+            <span>{order.totalPrice} ج.م</span>
           </div>
         </div>
       </div>

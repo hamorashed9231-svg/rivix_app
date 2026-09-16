@@ -121,7 +121,7 @@ export default function CartPage() {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-400">إجمالي المبلغ المدفوع:</span>
-            <span className="font-black text-white text-sm">{createdOrder.totalPrice} ر.س</span>
+            <span className="font-black text-white text-sm">{createdOrder.totalPrice} ج.م</span>
           </div>
         </div>
 
@@ -201,7 +201,7 @@ export default function CartPage() {
               </div>
               <div>
                 <h4 className="font-bold text-sm text-white">{item.name}</h4>
-                <p className="text-xs font-black text-cyan-400 mt-1">{item.price * item.quantity} ر.س</p>
+                <p className="text-xs font-black text-cyan-400 mt-1">{item.price * item.quantity} ج.م</p>
               </div>
             </div>
 
@@ -260,24 +260,24 @@ export default function CartPage() {
       <div className="bg-[#0B192C] border border-slate-800 rounded-2xl p-4 space-y-2 text-xs">
         <div className="flex justify-between text-slate-400">
           <span>مجموع الوجبات</span>
-          <span className="text-white font-bold">{totalPrice} ر.س</span>
+          <span className="text-white font-bold">{totalPrice} ج.م</span>
         </div>
 
         {discountAmount > 0 && (
           <div className="flex justify-between text-emerald-400 font-bold">
             <span>الخصم المطبق ({appliedCoupon?.code})</span>
-            <span>-{discountAmount} ر.س</span>
+            <span>-{discountAmount} ج.م</span>
           </div>
         )}
 
         <div className="flex justify-between text-slate-400">
           <span>رسوم التوصيل السريع</span>
-          <span className="text-emerald-400 font-bold">15.00 ر.س</span>
+          <span className="text-emerald-400 font-bold">15.00 ج.م</span>
         </div>
 
         <div className="pt-2 border-t border-slate-800 flex justify-between text-sm font-black text-white">
           <span>المبلغ الإجمالي</span>
-          <span className="text-cyan-400 text-lg">{finalTotal} ر.س</span>
+          <span className="text-cyan-400 text-lg">{finalTotal} ج.م</span>
         </div>
       </div>
 

@@ -252,7 +252,7 @@ export function MyOrdersList() {
                           x{item.quantity} {item.menuItem.name}
                         </span>
                         <span className="text-slate-400 font-mono">
-                          {(item.price * item.quantity).toFixed(2)} ر.س
+                          {(item.price * item.quantity).toFixed(2)} ج.م
                         </span>
                       </div>
                     ))}
@@ -270,7 +270,7 @@ export function MyOrdersList() {
                 <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
                   <div>
                     <span className="text-[11px] text-slate-400 block">إجمالي الطلب:</span>
-                    <span className="text-lg font-black text-cyan-400">{order.totalPrice.toFixed(2)} ر.س</span>
+                    <span className="text-lg font-black text-cyan-400">{order.totalPrice.toFixed(2)} ج.م</span>
                   </div>
 
                   <div className="flex items-center gap-2">

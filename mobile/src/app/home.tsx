@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { useRouter, Redirect } from 'expo-router';
 import { useRestaurant } from '@/context/RestaurantContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { MenuItem } from '@/services/restaurant';
 import { requestLocationPermission } from '@/services/location';
 import { registerForPushNotificationsAsync } from '@/services/notifications';
@@ -23,9 +24,10 @@ const FALLBACK_ITEM_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { restaurant, primaryColor, secondaryColor } = useRestaurant();
+  const { restaurant, primaryColor } = useRestaurant();
   const { user, isAuthenticated } = useAuth();
   const { addItem, getItemQuantity, getItemCount, getTotal } = useCart();
+  const { t, isRTL, toggleLanguage, language } = useLanguage();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
@@ -45,69 +47,32 @@ export default function HomeScreen() {
     return <Redirect href="/" />;
   }
 
-  // Parse items and categories from restaurant context
+  // Parse items from restaurant context or fallback
   const rawItems: MenuItem[] = useMemo(() => {
     if (restaurant?.menu && restaurant.menu.length > 0) {
       return restaurant.menu;
     }
-    // Fallback menu data if API hasn't loaded menu array yet
     return [
       {
         id: '1',
-        name: 'برجر كلاسيك لحم',
-        description: 'شريحة لحم بقر مشوية مع جبنة شيدر، خس، طماطم وصلصة خاصة',
+        name: language === 'ar' ? 'برجر كلاسيك لحم' : 'Classic Beef Burger',
+        description: language === 'ar' ? 'شريحة لحم بقر مشوية مع جبنة شيدر، خس وطماطم' : 'Grilled beef patty with cheddar cheese, lettuce & tomato',
         price: 120,
-        category: 'البرجر',
+        category: language === 'ar' ? 'البرجر' : 'Burgers',
         isAvailable: true,
         image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
       },
       {
         id: '2',
-        name: 'دجاج كرسبي برجر',
-        description: 'قطعة دجاج مقرمشة حارة مع مايونيز بالثوم وصوص رانش',
-        price: 110,
-        category: 'البرجر',
-        isAvailable: true,
-        image: 'https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=400',
-      },
-      {
-        id: '3',
-        name: 'بطاطس مقلية مع الجبنة',
-        description: 'بطاطس مقرمشة مغطاة بصلصة الجبنة الذائبة وقطع هالابينو',
+        name: language === 'ar' ? 'بطاطس مقلية بالجبنة' : 'Cheese Fries',
+        description: language === 'ar' ? 'بطاطس مقرمشة مغطاة بالجبنة الذائبة' : 'Crispy fries topped with melted cheese sauce',
         price: 45,
-        category: 'الأطباق الجانبية',
+        category: language === 'ar' ? 'الأطباق الجانبية' : 'Sides',
         isAvailable: true,
         image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400',
       },
-      {
-        id: '4',
-        name: 'حلقات البصل المقرمشة',
-        description: 'حلقات بصل ذهبية مقلية تقدم مع صوص الباربيكيو',
-        price: 40,
-        category: 'الأطباق الجانبية',
-        isAvailable: false,
-        image: 'https://images.unsplash.com/photo-1639024471283-03518883512d?w=400',
-      },
-      {
-        id: '5',
-        name: 'كولا باردة',
-        description: 'مشروب غازي منعش 330 مل',
-        price: 20,
-        category: 'المشروبات',
-        isAvailable: true,
-        image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400',
-      },
-      {
-        id: '6',
-        name: 'عصير برتقال طازج',
-        description: 'عصير برتقال طبيعي 100% بدون سكر مضاف',
-        price: 35,
-        category: 'المشروبات',
-        isAvailable: true,
-        image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=400',
-      },
     ];
-  }, [restaurant?.menu]);
+  }, [restaurant?.menu, language]);
 
   // Extract unique categories
   const categories = useMemo(() => {
@@ -132,7 +97,7 @@ export default function HomeScreen() {
     const currentQty = getItemQuantity(item.id);
 
     return (
-      <View style={[styles.card, !isAvailable && styles.disabledCard]}>
+      <View style={[styles.card, !isAvailable && styles.disabledCard, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <Image
           source={{ uri: item.image || FALLBACK_ITEM_IMAGE }}
           style={styles.cardImage}
@@ -140,16 +105,16 @@ export default function HomeScreen() {
         />
 
         <View style={styles.cardInfo}>
-          <Text style={styles.cardTitle}>{item.name}</Text>
+          <Text style={[styles.cardTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{item.name}</Text>
           {item.description ? (
-            <Text style={styles.cardDescription} numberOfLines={2}>
+            <Text style={[styles.cardDescription, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
               {item.description}
             </Text>
           ) : null}
 
-          <View style={styles.cardFooter}>
+          <View style={[styles.cardFooter, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Text style={[styles.cardPrice, { color: primaryColor }]}>
-              {item.price} جنيه
+              {item.price} {t('currency')}
             </Text>
 
             {isAvailable ? (
@@ -159,7 +124,7 @@ export default function HomeScreen() {
                 activeOpacity={0.8}
               >
                 <Text style={styles.addButtonText}>
-                  {currentQty > 0 ? `+ (${currentQty})` : '+ إضافة'}
+                  {currentQty > 0 ? `+ (${currentQty})` : `+ ${t('addToCart')}`}
                 </Text>
               </TouchableOpacity>
             ) : null}
@@ -167,8 +132,10 @@ export default function HomeScreen() {
         </View>
 
         {!isAvailable ? (
-          <View style={styles.unavailableBadge}>
-            <Text style={styles.unavailableText}>غير متاح حالياً</Text>
+          <View style={[styles.unavailableBadge, isRTL ? { left: 12 } : { right: 12 }]}>
+            <Text style={styles.unavailableText}>
+              {language === 'ar' ? 'غير متاح حالياً' : 'Unavailable'}
+            </Text>
           </View>
         ) : null}
       </View>
@@ -180,22 +147,35 @@ export default function HomeScreen() {
       <StatusBar barStyle="light-content" backgroundColor={primaryColor} />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: primaryColor }]}>
-        <View style={styles.headerRight}>
+      <View style={[styles.header, { backgroundColor: primaryColor, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.headerRight, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           {restaurant?.logo ? (
             <Image source={{ uri: restaurant.logo }} style={styles.headerLogo} resizeMode="contain" />
           ) : (
             <View style={styles.headerLogoPlaceholder}>
               <Text style={[styles.headerLogoText, { color: primaryColor }]}>
-                {(restaurant?.name || 'م').charAt(0)}
+                {(restaurant?.name || 'M').charAt(0)}
               </Text>
             </View>
           )}
           <View>
-            <Text style={styles.headerTitle}>{restaurant?.name || 'المطعم'}</Text>
-            <Text style={styles.headerSubtitle}>أهلاً {user?.name || 'العميل'} 👋</Text>
+            <Text style={[styles.headerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {restaurant?.name || t('appName')}
+            </Text>
+            <Text style={[styles.headerSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {t('welcomeBack')} {user?.name || t('guestUser')} 👋
+            </Text>
           </View>
         </View>
+
+        {/* Language Switcher Toggle */}
+        <TouchableOpacity
+          style={styles.langToggleBtn}
+          onPress={toggleLanguage}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.langToggleText}>{t('languageToggle')}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Categories Horizontal Tabs */}
@@ -203,11 +183,11 @@ export default function HomeScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsScroll}
+          contentContainerStyle={[styles.tabsScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
         >
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat;
-            const label = cat === 'ALL' ? 'الكل' : cat;
+            const label = cat === 'ALL' ? t('allCategories') : cat;
 
             return (
               <TouchableOpacity
@@ -240,13 +220,21 @@ export default function HomeScreen() {
         renderItem={renderMenuItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>{t('noItemsFound')}</Text>
+          </View>
+        }
       />
 
       {/* Floating Cart Button */}
       {totalItemsCount > 0 ? (
         <View style={styles.floatingButtonWrapper}>
           <TouchableOpacity
-            style={[styles.floatingCartButton, { backgroundColor: primaryColor }]}
+            style={[
+              styles.floatingCartButton,
+              { backgroundColor: primaryColor, flexDirection: isRTL ? 'row-reverse' : 'row' }
+            ]}
             onPress={() => router.push('/cart')}
             activeOpacity={0.9}
           >
@@ -257,10 +245,12 @@ export default function HomeScreen() {
             </View>
 
             <Text style={styles.floatingButtonText}>
-              {totalItemsCount} {totalItemsCount === 1 ? 'صنف' : 'أصناف'} - {subtotal} جنيه
+              {totalItemsCount} {totalItemsCount === 1 ? t('itemCountSingle') : t('itemsCount')} - {subtotal} {t('currency')}
             </Text>
 
-            <Text style={styles.floatingButtonAction}>عرض العربة ←</Text>
+            <Text style={styles.floatingButtonAction}>
+              {t('viewCart')} {isRTL ? '←' : '→'}
+            </Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -275,9 +265,8 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingVertical: 14,
-    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     elevation: 4,
@@ -287,7 +276,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   headerRight: {
-    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 12,
   },
@@ -313,12 +301,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'right',
   },
   headerSubtitle: {
     color: 'rgba(255, 255, 255, 0.85)',
     fontSize: 13,
-    textAlign: 'right',
+  },
+  langToggleBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  langToggleText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: 'bold',
   },
   tabsContainer: {
     backgroundColor: '#FFFFFF',
@@ -329,7 +328,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
-    flexDirection: 'row-reverse',
   },
   tab: {
     paddingVertical: 8,
@@ -353,10 +351,17 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
     gap: 14,
   },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#64748B',
+    fontSize: 15,
+  },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    flexDirection: 'row-reverse',
     overflow: 'hidden',
     elevation: 2,
     shadowColor: '#000',
@@ -384,17 +389,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#1E293B',
-    textAlign: 'right',
   },
   cardDescription: {
     fontSize: 13,
     color: '#64748B',
-    textAlign: 'right',
     marginTop: 2,
     lineHeight: 18,
   },
   cardFooter: {
-    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 8,
@@ -416,7 +418,6 @@ const styles = StyleSheet.create({
   unavailableBadge: {
     position: 'absolute',
     top: 12,
-    left: 12,
     backgroundColor: '#EF4444',
     paddingVertical: 3,
     paddingHorizontal: 8,
@@ -434,7 +435,6 @@ const styles = StyleSheet.create({
     right: 16,
   },
   floatingCartButton: {
-    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 14,

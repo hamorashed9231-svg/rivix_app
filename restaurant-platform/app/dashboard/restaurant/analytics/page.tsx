@@ -112,7 +112,7 @@ export default async function OwnerAnalyticsPage() {
             <span className="text-xs font-semibold uppercase text-slate-400">إجمالي مبيعات المطعم</span>
             <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400"><DollarSign className="w-5 h-5" /></div>
           </div>
-          <p className="text-2xl font-black text-white mt-3">{totalGrossSales.toLocaleString()} <span className="text-sm font-normal text-slate-400">ر.س</span></p>
+          <p className="text-2xl font-black text-white mt-3">{totalGrossSales.toLocaleString()} <span className="text-sm font-normal text-slate-400">ج.م</span></p>
         </div>
 
         <div className="bg-[#0B192C] border border-slate-800 rounded-xl p-5 shadow-lg">
@@ -120,7 +120,7 @@ export default async function OwnerAnalyticsPage() {
             <span className="text-xs font-semibold uppercase text-slate-400">صافي الأرباح المستلمة</span>
             <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><TrendingUp className="w-5 h-5" /></div>
           </div>
-          <p className="text-2xl font-black text-emerald-400 mt-3">{Math.round(netStoreRevenue).toLocaleString()} <span className="text-sm font-normal text-slate-400">ر.س</span></p>
+          <p className="text-2xl font-black text-emerald-400 mt-3">{Math.round(netStoreRevenue).toLocaleString()} <span className="text-sm font-normal text-slate-400">ج.م</span></p>
           <p className="text-xs text-emerald-300 mt-2 font-medium">بعد خصم عمولة المنصة ({commissionRate}%)</p>
         </div>
 
@@ -137,7 +137,7 @@ export default async function OwnerAnalyticsPage() {
             <span className="text-xs font-semibold uppercase text-slate-400">عمولة المنصة المخصومة</span>
             <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400"><Percent className="w-5 h-5" /></div>
           </div>
-          <p className="text-2xl font-black text-amber-400 mt-3">{Math.round(platformCommissionAmount).toLocaleString()} <span className="text-sm font-normal text-slate-400">ر.س</span></p>
+          <p className="text-2xl font-black text-amber-400 mt-3">{Math.round(platformCommissionAmount).toLocaleString()} <span className="text-sm font-normal text-slate-400">ج.م</span></p>
         </div>
       </div>
 

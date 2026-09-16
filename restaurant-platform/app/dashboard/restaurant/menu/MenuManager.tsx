@@ -786,7 +786,7 @@ export function MenuManager({
                                   {item.name}
                                 </h4>
                                 <span className="font-black text-brand-sky text-xs font-mono shrink-0">
-                                  {item.price} ر.س
+                                  {item.price} ج.م
                                 </span>
                               </div>
 
@@ -886,7 +886,7 @@ export function MenuManager({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-brand-gray-300 mb-1.5">
-                    السعر (ر.س) <span className="text-brand-danger">*</span>
+                    السعر (ج.م) <span className="text-brand-danger">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-brand-gray-400">

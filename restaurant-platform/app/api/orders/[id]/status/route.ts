@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { OrderStatus } from "@prisma/client"
+import { publishOrderEvent } from "@/lib/notifications-pubsub"
 
 export async function PATCH(
   req: Request,
@@ -29,8 +30,15 @@ export async function PATCH(
         customer: { select: { name: true, phone: true } },
         items: { include: { menuItem: true } },
         deliveryAddress: true,
+        branch: { select: { restaurantId: true } },
       },
     })
+
+    if (updatedOrder.branch?.restaurantId) {
+      publishOrderEvent(updatedOrder.branch.restaurantId, "order_status_changed", updatedOrder.id).catch((err) =>
+        console.error("PubSub Trigger Error:", err)
+      )
+    }
 
     return NextResponse.json({ message: "تم تحديث حالة الطلب بنجاح", order: updatedOrder })
   } catch (error) {

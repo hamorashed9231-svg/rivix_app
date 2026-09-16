@@ -158,7 +158,7 @@ export function MobileMenuBrowser({
                             className="text-xs font-black"
                             style={{ color: "var(--restaurant-primary, #2196F3)" }}
                           >
-                            {item.price} ر.س
+                            {item.price} ج.م
                           </span>
                         </div>
                       </div>

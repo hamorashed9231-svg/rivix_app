@@ -1,0 +1,30 @@
+# Root .gitignore for Rivix app monorepo
+
+# Dependencies & Node
+node_modules/
+.pnp
+.pnp.*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Next.js & Vercel
+.next/
+.vercel/
+out/
+build/
+
+# Expo / Mobile
+.expo/
+dist/
+
+# Backup dumps & logs
+scripts/backups/
+*.log
+
+# Misc
+.DS_Store
+*.pem
+*.tsbuildinfo

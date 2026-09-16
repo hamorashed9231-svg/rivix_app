@@ -51,7 +51,7 @@ export function OwnerAnalyticsCharts({
               <Tooltip
                 contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff" }}
               />
-              <Bar dataKey="sales" name="المبيعات (ر.س)" fill="#00D2FF" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="sales" name="المبيعات (ج.م)" fill="#00D2FF" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -77,7 +77,7 @@ export function OwnerAnalyticsCharts({
                 <Tooltip
                   contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff" }}
                 />
-                <Bar dataKey="sales" name="إجمالي مبيعات الصنف (ر.س)" fill="#10B981" radius={[0, 8, 8, 0]} />
+                <Bar dataKey="sales" name="إجمالي مبيعات الصنف (ج.م)" fill="#10B981" radius={[0, 8, 8, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
