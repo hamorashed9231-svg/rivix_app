@@ -28,6 +28,9 @@ export interface BranchData {
   lng: number
   isActive: boolean
   openingHours?: any
+  deliveryRadiusKm?: number
+  baseDeliveryFee?: number
+  feePerKm?: number
 }
 
 interface BranchFormProps {
@@ -56,6 +59,16 @@ export function BranchForm({
   )
   const [closeTime, setCloseTime] = useState(
     initialData?.openingHours?.close || "12:00 AM"
+  )
+
+  const [deliveryRadiusKm, setDeliveryRadiusKm] = useState<number>(
+    initialData?.deliveryRadiusKm ?? 10
+  )
+  const [baseDeliveryFee, setBaseDeliveryFee] = useState<number>(
+    initialData?.baseDeliveryFee ?? 15
+  )
+  const [feePerKm, setFeePerKm] = useState<number>(
+    initialData?.feePerKm ?? 5
   )
 
   const [isGettingLocation, setIsGettingLocation] = useState(false)
@@ -105,6 +118,9 @@ export function BranchForm({
       lng,
       isActive,
       openingHours: { open: openTime, close: closeTime },
+      deliveryRadiusKm: Number(deliveryRadiusKm),
+      baseDeliveryFee: Number(baseDeliveryFee),
+      feePerKm: Number(feePerKm),
     }
 
     try {
@@ -285,6 +301,57 @@ export function BranchForm({
               </>
             )}
           </button>
+        </div>
+      </div>
+
+      {/* Delivery Radius Circle & Fees Section */}
+      <div className="p-4 rounded-xl bg-cyan-950/20 border border-cyan-500/30 space-y-3">
+        <h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+          <Navigation className="w-4 h-4" /> نطاق التوصيل وحساب التكلفة الديناميكية
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              نصف قطر التغطية (كم)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="100"
+              value={deliveryRadiusKm}
+              onChange={(e) => setDeliveryRadiusKm(Number(e.target.value))}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">يمنع الطلب إذا كان العميل خارج هذه المسافة.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              رسوم التوصيل الأساسية (ج.م)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={baseDeliveryFee}
+              onChange={(e) => setBaseDeliveryFee(Number(e.target.value))}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">الحد الأدنى لرسوم التوصيل.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1">
+              التكلفة الإضافية لكل كم (ج.م/كم)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={feePerKm}
+              onChange={(e) => setFeePerKm(Number(e.target.value))}
+              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">رسوم إضافية عن كل كيلومتر مسافة.</p>
+          </div>
         </div>
       </div>
 

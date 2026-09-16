@@ -35,7 +35,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { name, address, phone, lat, lng, isActive, openingHours } = body
+    const { name, address, phone, lat, lng, isActive, openingHours, deliveryRadiusKm, baseDeliveryFee, feePerKm } = body
 
     const updateData: any = {}
     if (name !== undefined) updateData.name = name.trim()
@@ -45,6 +45,9 @@ export async function PATCH(
     if (lng !== undefined) updateData.lng = parseFloat(lng)
     if (isActive !== undefined) updateData.isActive = Boolean(isActive)
     if (openingHours !== undefined) updateData.openingHours = openingHours
+    if (deliveryRadiusKm !== undefined) updateData.deliveryRadiusKm = parseFloat(deliveryRadiusKm)
+    if (baseDeliveryFee !== undefined) updateData.baseDeliveryFee = parseFloat(baseDeliveryFee)
+    if (feePerKm !== undefined) updateData.feePerKm = parseFloat(feePerKm)
 
     const updatedBranch = await prisma.branch.update({
       where: { id: branchId },

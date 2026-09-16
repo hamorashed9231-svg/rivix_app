@@ -19,6 +19,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { MenuItem } from '@/services/restaurant';
 import { requestLocationPermission } from '@/services/location';
 import { registerForPushNotificationsAsync } from '@/services/notifications';
+import { TENANT_CONFIG } from '@/config/tenant';
 
 const FALLBACK_ITEM_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400';
 
@@ -168,14 +169,42 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Language Switcher Toggle */}
-        <TouchableOpacity
-          style={styles.langToggleBtn}
-          onPress={toggleLanguage}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.langToggleText}>{t('languageToggle')}</Text>
-        </TouchableOpacity>
+        {/* Header Action Buttons */}
+        <View style={[styles.headerActions, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          {TENANT_CONFIG.isMultiVendor && (
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={() => router.push('/restaurants')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.headerIconText}>🍽️</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={styles.headerIconBtn}
+            onPress={() => router.push('/orders')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.headerIconText}>📦</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.headerIconBtn}
+            onPress={() => router.push('/profile')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.headerIconText}>👤</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.langToggleBtn}
+            onPress={toggleLanguage}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.langToggleText}>{t('languageToggle')}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Categories Horizontal Tabs */}
@@ -467,5 +496,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  headerActions: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerIconBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  headerIconText: {
+    fontSize: 16,
   },
 });

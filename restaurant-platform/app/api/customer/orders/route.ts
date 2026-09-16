@@ -2,12 +2,14 @@ import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { publishOrderEvent } from "@/lib/notifications-pubsub"
+import { checkBranchOpenStatus } from "@/lib/opening-hours"
+import { calculateDeliveryForCustomer } from "@/lib/delivery-calculator"
 
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser()
     const body = await req.json()
-    const { restaurantId, items, totalPrice, deliveryAddressDetails } = body
+    const { restaurantId, items, totalPrice, deliveryAddressDetails, customerLat, customerLng } = body
 
     if (!restaurantId || !items || items.length === 0 || !totalPrice) {
       return NextResponse.json(
@@ -28,6 +30,15 @@ export async function POST(req: Request) {
       )
     }
 
+    // Check if branch is open based on working hours
+    const branchStatus = checkBranchOpenStatus(branch.openingHours, branch.isActive)
+    if (!branchStatus.isOpen) {
+      return NextResponse.json(
+        { error: branchStatus.reason || "عذراً، الفرع مغلق حالياً ولا يستقبل طلبات جديدة." },
+        { status: 400 }
+      )
+    }
+
     // 2. Determine Customer User
     if (!user) {
       return NextResponse.json(
@@ -42,32 +53,49 @@ export async function POST(req: Request) {
       where: { userId: customerUser.id },
     })
 
+    const targetLat = typeof customerLat === "number" ? customerLat : address?.lat || 24.7136
+    const targetLng = typeof customerLng === "number" ? customerLng : address?.lng || 46.6753
+
     if (!address) {
       address = await prisma.address.create({
         data: {
           userId: customerUser.id,
           label: "المنزل",
-          lat: 24.7136,
-          lng: 46.6753,
+          lat: targetLat,
+          lng: targetLng,
           details: deliveryAddressDetails || "الرياض - حي الملقا",
         },
       })
     }
 
-    // 4. Create Order and OrderItems in DB
+    // 4. Check GPS Delivery Radius Coverage and Calculate Fee
+    const deliveryCoverage = calculateDeliveryForCustomer(targetLat, targetLng, [branch])
+    if (!deliveryCoverage.isWithinRadius) {
+      return NextResponse.json(
+        { error: deliveryCoverage.reason || "عذراً، موقعك الحالي يقع خارج نطاق التوصيل المتاح لفرعنا" },
+        { status: 400 }
+      )
+    }
+
+    // 5. Create Order and OrderItems in DB
+    const finalTotalPrice = parseFloat(totalPrice) + deliveryCoverage.deliveryFee
+
     const newOrder = await prisma.order.create({
       data: {
         customerId: customerUser.id,
         branchId: branch.id,
         status: "pending",
-        totalPrice: parseFloat(totalPrice),
+        totalPrice: finalTotalPrice,
+        deliveryFee: deliveryCoverage.deliveryFee,
+        distanceKm: deliveryCoverage.distanceKm,
         deliveryAddressId: address.id,
         items: {
           create: items.map((item: any) => ({
-            menuItemId: item.id,
+            menuItemId: item.menuItemId || item.id,
             quantity: item.quantity,
             price: parseFloat(item.price),
             notes: item.notes || null,
+            selectedOptions: item.selectedOptions ? item.selectedOptions : null,
           })),
         },
       },

@@ -7,6 +7,7 @@ import { ArrowRight, Star, Clock, MapPin, Utensils } from "lucide-react"
 import { RestaurantThemeProvider } from "@/components/RestaurantThemeProvider"
 import { MobileMenuBrowser } from "../../restaurants/[id]/MobileMenuBrowser"
 import { RestaurantReviewsSection } from "@/components/RestaurantReviewsSection"
+import { checkBranchOpenStatus } from "@/lib/opening-hours"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -29,6 +30,7 @@ export default async function CustomerRestaurantBySlugPage({
 
   // 1. Fetch default branch for this restaurant
   const defaultBranch = await getDefaultBranch(restaurant.id)
+  const branchStatus = checkBranchOpenStatus(defaultBranch?.openingHours, defaultBranch?.isActive)
 
   // 2. Fetch menu categories and items for default branch (filtering isAvailable: true)
   // 2. Fetch menu categories for restaurant and items available in default branch
@@ -47,6 +49,14 @@ export default async function CustomerRestaurantBySlugPage({
         },
         include: {
           branchItems: defaultBranch ? { where: { branchId: defaultBranch.id } } : false,
+          optionGroups: {
+            include: {
+              options: {
+                orderBy: { order: "asc" },
+              },
+            },
+            orderBy: { order: "asc" },
+          },
         },
       },
     },
@@ -107,9 +117,22 @@ export default async function CustomerRestaurantBySlugPage({
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl text-amber-300 text-xs font-black">
-            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-            <span>4.9 (تقييمات ممتازة)</span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 border ${
+                branchStatus.isOpen
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                  : "bg-rose-500/10 text-rose-400 border-rose-500/30"
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${branchStatus.isOpen ? "bg-emerald-400 animate-pulse" : "bg-rose-500"}`} />
+              {branchStatus.isOpen ? "مفتوح الآن" : "مغلق حالياً"}
+            </span>
+
+            <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl text-amber-300 text-xs font-black">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <span>4.9 (تقييمات ممتازة)</span>
+            </div>
           </div>
         </div>
 
@@ -126,8 +149,8 @@ export default async function CustomerRestaurantBySlugPage({
 
           {/* Info Badges */}
           <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 pt-3 border-t border-slate-800/80">
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-[var(--restaurant-primary)]" /> 20-30 دقيقة
+            <span className="flex items-center gap-1.5 font-bold text-cyan-400">
+              <Clock className="w-4 h-4 text-[var(--restaurant-primary)]" /> {branchStatus.formattedHours}
             </span>
             <span className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-[var(--restaurant-primary)]" />

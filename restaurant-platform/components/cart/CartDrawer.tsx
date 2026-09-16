@@ -108,6 +108,20 @@ export function CartDrawer() {
                       <h4 className="text-xs font-bold text-white truncate">
                         {item.name}
                       </h4>
+
+                      {item.selectedOptions && item.selectedOptions.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {item.selectedOptions.map((opt, idx) => (
+                            <span
+                              key={idx}
+                              className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
+                            >
+                              {opt.groupName}: {opt.optionName} {opt.price > 0 ? `(+${opt.price}ج.م)` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       <p className="text-xs font-black text-cyan-400 mt-1">
                         {item.price} ج.م
                       </p>

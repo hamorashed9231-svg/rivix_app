@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MenuItem } from '@/services/restaurant';
+import {
+  CartItem,
+  addCartItem,
+  removeCartItem,
+  updateCartItemQuantity,
+  calculateCartTotal,
+  calculateCartItemCount,
+} from './cart-helpers';
 
-export interface CartItem {
-  menuItemId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string;
-}
+export type { CartItem };
 
 interface CartContextType {
   items: CartItem[];
@@ -49,7 +51,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })();
   }, []);
 
-  // Save cart to AsyncStorage whenever items change (after initial load)
+  // Save cart to AsyncStorage whenever items change
   const saveCart = useCallback(async (newItems: CartItem[]) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
@@ -61,26 +63,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addItem = useCallback(
     (item: MenuItem) => {
       setItems((prevItems) => {
-        const existingIndex = prevItems.findIndex((ci) => ci.menuItemId === item.id);
-        let updated: CartItem[];
-        if (existingIndex > -1) {
-          updated = [...prevItems];
-          updated[existingIndex] = {
-            ...updated[existingIndex],
-            quantity: updated[existingIndex].quantity + 1,
-          };
-        } else {
-          updated = [
-            ...prevItems,
-            {
-              menuItemId: item.id,
-              name: item.name,
-              price: item.price,
-              quantity: 1,
-              image: item.image,
-            },
-          ];
-        }
+        const updated = addCartItem(prevItems, item);
         saveCart(updated);
         return updated;
       });
@@ -91,7 +74,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const removeItem = useCallback(
     (menuItemId: string) => {
       setItems((prevItems) => {
-        const updated = prevItems.filter((ci) => ci.menuItemId !== menuItemId);
+        const updated = removeCartItem(prevItems, menuItemId);
         saveCart(updated);
         return updated;
       });
@@ -101,19 +84,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateQuantity = useCallback(
     (menuItemId: string, quantity: number) => {
-      if (quantity <= 0) {
-        removeItem(menuItemId);
-        return;
-      }
       setItems((prevItems) => {
-        const updated = prevItems.map((ci) =>
-          ci.menuItemId === menuItemId ? { ...ci, quantity } : ci
-        );
+        const updated = updateCartItemQuantity(prevItems, menuItemId, quantity);
         saveCart(updated);
         return updated;
       });
     },
-    [removeItem, saveCart]
+    [saveCart]
   );
 
   const clearCart = useCallback(async () => {
@@ -126,11 +103,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const getTotal = useCallback(() => {
-    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return calculateCartTotal(items);
   }, [items]);
 
   const getItemCount = useCallback(() => {
-    return items.reduce((sum, item) => sum + item.quantity, 0);
+    return calculateCartItemCount(items);
   }, [items]);
 
   const getItemQuantity = useCallback(

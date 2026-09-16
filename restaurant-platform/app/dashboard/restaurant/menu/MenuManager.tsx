@@ -23,6 +23,9 @@ import {
   Download,
   Upload,
   FileText,
+  Layers,
+  Tag,
+  Check,
 } from "lucide-react"
 
 interface MenuItem {
@@ -79,6 +82,129 @@ export function MenuManager({
   const [itemPrice, setItemPrice] = useState("")
   const [itemImage, setItemImage] = useState("")
   const [itemAvailable, setItemAvailable] = useState(true)
+
+  // Item Options / Modifiers State
+  const [activeOptionsModal, setActiveOptionsModal] = useState<{
+    itemId: string
+    itemName: string
+    groups: any[]
+  } | null>(null)
+
+  const [optGroupName, setOptGroupName] = useState("")
+  const [optSelectionType, setOptSelectionType] = useState<"single" | "multiple">("single")
+  const [optIsRequired, setOptIsRequired] = useState(false)
+  const [optItems, setOptItems] = useState<{ name: string; price: string }[]>([
+    { name: "ثُمُن كِيلو", price: "0" },
+    { name: "رُبُع كِيلو", price: "50" },
+    { name: "نِصْف كِيلو", price: "120" },
+    { name: "كِيلو كامل", price: "240" },
+  ])
+  const [loadingOptions, setLoadingOptions] = useState(false)
+
+  const openManageOptionsModal = async (itemId: string, itemName: string) => {
+    setLoadingOptions(true)
+    setError("")
+    setOptGroupName("الوزن / الحجم")
+    setOptSelectionType("single")
+    setOptIsRequired(true)
+    setOptItems([
+      { name: "ثُمُن كِيلو", price: "0" },
+      { name: "رُبُع كِيلو", price: "50" },
+      { name: "نِصْف كِيلو", price: "120" },
+      { name: "كِيلو كامل", price: "240" },
+    ])
+
+    try {
+      const res = await fetch(`/api/items/${itemId}/options`)
+      if (res.ok) {
+        const data = await res.json()
+        setActiveOptionsModal({
+          itemId,
+          itemName,
+          groups: data.groups || [],
+        })
+      } else {
+        setActiveOptionsModal({ itemId, itemName, groups: [] })
+      }
+    } catch (err) {
+      setActiveOptionsModal({ itemId, itemName, groups: [] })
+    } finally {
+      setLoadingOptions(false)
+    }
+  }
+
+  const handleSaveOptionGroup = async () => {
+    if (!activeOptionsModal || !optGroupName.trim()) return
+    setLoadingOptions(true)
+    setError("")
+
+    try {
+      const validOptions = optItems
+        .filter((o) => o.name.trim().length > 0)
+        .map((o) => ({
+          name: o.name.trim(),
+          price: parseFloat(o.price) || 0,
+        }))
+
+      const res = await fetch(`/api/items/${activeOptionsModal.itemId}/options`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: optGroupName.trim(),
+          selectionType: optSelectionType,
+          isRequired: optIsRequired,
+          options: validOptions,
+        }),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.group) {
+        setActiveOptionsModal((prev) =>
+          prev
+            ? {
+                ...prev,
+                groups: [...prev.groups, data.group],
+              }
+            : null
+        )
+        setSuccess("تم إضافة مجموعة الخيارات والأوزان بنجاح 🎉")
+        setOptGroupName("")
+      } else {
+        setError(data.error || "حدث خطأ أثناء حفظ الخيارات")
+      }
+    } catch (err) {
+      setError("حدث خطأ أثناء حفظ الخيارات")
+    } finally {
+      setLoadingOptions(false)
+    }
+  }
+
+  const handleDeleteOptionGroup = async (groupId: string) => {
+    if (!activeOptionsModal) return
+    setLoadingOptions(true)
+
+    try {
+      const res = await fetch(`/api/items/${activeOptionsModal.itemId}/options?groupId=${groupId}`, {
+        method: "DELETE",
+      })
+
+      if (res.ok) {
+        setActiveOptionsModal((prev) =>
+          prev
+            ? {
+                ...prev,
+                groups: prev.groups.filter((g) => g.id !== groupId),
+              }
+            : null
+        )
+        setSuccess("تم حذف مجموعة الخيارات")
+      }
+    } catch (err) {
+      setError("حدث خطأ أثناء الحذف")
+    } finally {
+      setLoadingOptions(false)
+    }
+  }
 
   // Excel Import Format State ("arabic" | "product_feed")
   const [menuFormat, setMenuFormat] = useState<"arabic" | "product_feed">("arabic")
@@ -821,6 +947,15 @@ export function MenuManager({
                                 <div className="flex items-center gap-1">
                                   <button
                                     type="button"
+                                    onClick={() => openManageOptionsModal(item.id, item.name)}
+                                    className="px-2 py-1 rounded-lg bg-brand-sky/10 border border-brand-sky/20 hover:bg-brand-sky/20 text-brand-sky transition-colors flex items-center gap-1 text-[10px] font-bold cursor-pointer"
+                                    title="إدارة الأحجام والإضافات والأوزان"
+                                  >
+                                    <Layers className="w-3 h-3" />
+                                    <span>الأحجام/الأوزان</span>
+                                  </button>
+                                  <button
+                                    type="button"
                                     onClick={() => openEditItemModal(cat.id, item)}
                                     className="p-1.5 rounded-lg hover:bg-brand-gray-800 text-brand-gray-400 hover:text-brand-white transition-colors"
                                     title="تعديل الصنف"
@@ -982,6 +1117,184 @@ export function MenuManager({
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Item Options & Modifiers Modal (الأحجام، الإضافات، الأوزان) */}
+      {activeOptionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-navy/90 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl rounded-3xl bg-brand-navy border border-brand-sky/30 p-6 shadow-2xl space-y-6 text-right max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-brand-gray-800 pb-4">
+              <div>
+                <h3 className="text-lg font-extrabold text-brand-white flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-brand-sky" /> إدارة الأحجام والإضافات والأوزان
+                </h3>
+                <p className="text-xs text-brand-gray-400 mt-1">
+                  صنف: <span className="font-bold text-brand-sky">{activeOptionsModal.itemName}</span>
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveOptionsModal(null)}
+                className="w-8 h-8 rounded-full bg-brand-gray-900 border border-brand-gray-800 text-brand-gray-400 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Existing Option Groups */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-brand-gray-300">المجموعات المضافة حالياً:</h4>
+              {activeOptionsModal.groups.length === 0 ? (
+                <div className="p-4 rounded-xl bg-brand-gray-900/50 border border-brand-gray-800 text-center text-xs text-brand-gray-400">
+                  لا توجد مجموعات أحجام أو إضافات لهذا الصنف بعد. يمكنك إضافة مجموعة جديدة بالأسفل.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activeOptionsModal.groups.map((group: any) => (
+                    <div
+                      key={group.id}
+                      className="p-4 rounded-2xl bg-brand-gray-900 border border-brand-gray-800 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-white">{group.name}</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-sky/10 text-brand-sky border border-brand-sky/20">
+                            {group.selectionType === "single" ? "اختيار واحد" : "خيارات متعددة"}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOptionGroup(group.id)}
+                          className="text-xs font-bold text-brand-danger hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> حذف المجموعة
+                        </button>
+                      </div>
+
+                      {/* Options Pill List */}
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {group.options.map((opt: any) => (
+                          <span
+                            key={opt.id}
+                            className="px-2.5 py-1 rounded-xl bg-brand-navy border border-brand-gray-700 text-xs text-brand-gray-200 font-bold flex items-center gap-1.5"
+                          >
+                            <Tag className="w-3 h-3 text-amber-400" />
+                            {opt.name}
+                            <span className="text-brand-sky">({opt.price > 0 ? `+${opt.price} ج.م` : "0 ج.م"})</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Form to Add New Option Group */}
+            <div className="p-4 rounded-2xl bg-brand-gray-900/90 border border-brand-sky/20 space-y-4">
+              <h4 className="text-xs font-black text-brand-sky flex items-center gap-1.5">
+                <Plus className="w-4 h-4" /> إضافة مجموعة أحجام أو إضافات جديدة
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-brand-gray-300 mb-1">
+                    اسم المجموعة (مثال: "الوزن / الحجم" أو "نوع العيش" أو "الصوصات")
+                  </label>
+                  <input
+                    type="text"
+                    value={optGroupName}
+                    onChange={(e) => setOptGroupName(e.target.value)}
+                    placeholder="الوزن / الحجم"
+                    className="w-full rounded-xl bg-brand-navy border border-brand-gray-800 px-3.5 py-2 text-xs text-brand-white outline-none focus:border-brand-sky"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-brand-gray-300 mb-1">
+                    نوع الاختيار
+                  </label>
+                  <select
+                    value={optSelectionType}
+                    onChange={(e) => setOptSelectionType(e.target.value as "single" | "multiple")}
+                    className="w-full rounded-xl bg-brand-navy border border-brand-gray-800 px-3.5 py-2 text-xs text-brand-white outline-none focus:border-brand-sky cursor-pointer font-bold"
+                  >
+                    <option value="single">اختيار واحد فقط (للأحجام والأوزان)</option>
+                    <option value="multiple">اختيارات متعددة (للإضافات والصوصات)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Options Items Inputs */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-brand-gray-300">
+                    الخيارات المتاحة والسعر الإضافي:
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setOptItems((prev) => [...prev, { name: "", price: "0" }])}
+                    className="text-[11px] font-bold text-brand-sky hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" /> إضافة خيار آخر
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {optItems.map((opt, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={opt.name}
+                        onChange={(e) => {
+                          const updated = [...optItems]
+                          updated[idx].name = e.target.value
+                          setOptItems(updated)
+                        }}
+                        placeholder="اسم الخيار (مثال: ثُمُن كِيلو، رُبُع كِيلو، نِصْف كِيلو، كِيلو)"
+                        className="flex-1 rounded-xl bg-brand-navy border border-brand-gray-800 px-3.5 py-2 text-xs text-brand-white outline-none focus:border-brand-sky"
+                      />
+                      <input
+                        type="number"
+                        value={opt.price}
+                        onChange={(e) => {
+                          const updated = [...optItems]
+                          updated[idx].price = e.target.value
+                          setOptItems(updated)
+                        }}
+                        placeholder="السعر (ج.م)"
+                        className="w-24 rounded-xl bg-brand-navy border border-brand-gray-800 px-3.5 py-2 text-xs text-brand-sky font-bold outline-none focus:border-brand-sky text-center"
+                      />
+                      {optItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setOptItems((prev) => prev.filter((_, i) => i !== idx))}
+                          className="p-2 text-brand-gray-500 hover:text-brand-danger cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <Button
+                  type="button"
+                  variant="primary"
+                  isLoading={loadingOptions}
+                  onClick={handleSaveOptionGroup}
+                  className="text-xs font-bold px-6 py-2.5 cursor-pointer"
+                >
+                  حفظ المجموعة والأحجام
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -2,6 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react"
 
+export interface SelectedOption {
+  groupId: string
+  groupName: string
+  optionId: string
+  optionName: string
+  price: number
+}
+
 export interface CartItem {
   id: string
   menuItemId?: string
@@ -10,6 +18,7 @@ export interface CartItem {
   quantity: number
   image?: string | null
   notes?: string
+  selectedOptions?: SelectedOption[]
 }
 
 interface ConflictModalState {
@@ -144,6 +153,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           quantity: qty,
           image: newItem.image,
           notes: newItem.notes,
+          selectedOptions: newItem.selectedOptions,
         },
       ]
     })

@@ -33,6 +33,8 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
+  const restaurantId = orders[0]?.restaurantId || null
+
   // Modals state
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any | null>(null)
   const [editingOrder, setEditingOrder] = useState<any | null>(null)
@@ -390,12 +392,31 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                 <div className="space-y-2">
                   <span className="text-xs font-semibold text-slate-400">عناصر الطلب ({order.items?.length || 0}):</span>
                   <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                    {order.items?.map((item: any) => (
-                      <div key={item.id} className="flex items-center justify-between text-xs bg-slate-950/60 p-2 rounded border border-slate-800/50">
-                        <span className="text-white font-medium">x{item.quantity} {item.menuItem?.name}</span>
-                        <span className="font-bold text-cyan-400">{item.price * item.quantity} ج.م</span>
-                      </div>
-                    ))}
+                    {order.items?.map((item: any) => {
+                      const optionsList = Array.isArray(item.selectedOptions)
+                        ? item.selectedOptions
+                        : typeof item.selectedOptions === "string"
+                        ? JSON.parse(item.selectedOptions || "[]")
+                        : []
+
+                      return (
+                        <div key={item.id} className="text-xs bg-slate-950/60 p-2 rounded-xl border border-slate-800/50 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-white font-bold">x{item.quantity} {item.menuItem?.name || item.name}</span>
+                            <span className="font-bold text-cyan-400">{item.price * item.quantity} ج.م</span>
+                          </div>
+                          {optionsList.length > 0 && (
+                            <div className="flex flex-wrap gap-1 pt-0.5">
+                              {optionsList.map((opt: any, idx: number) => (
+                                <span key={idx} className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                                  {opt.groupName}: {opt.optionName} {opt.price > 0 ? `(+${opt.price}ج.م)` : ""}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>

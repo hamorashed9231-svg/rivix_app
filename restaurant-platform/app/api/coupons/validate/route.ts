@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { calculateCouponDiscount } from "@/lib/coupon-calculator"
 
 export async function POST(req: Request) {
   try {
@@ -18,36 +19,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "كود الخصم غير صالح أو ملغى" }, { status: 404 })
     }
 
-    // Check expiration date
-    if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
-      return NextResponse.json({ error: "انتهت صلاحية كود الخصم هذا" }, { status: 400 })
-    }
+    // Validate & Calculate discount using pure helper logic
+    const validation = calculateCouponDiscount(coupon, subtotal, restaurantId)
 
-    // Check minimum order amount
-    if (subtotal < coupon.minOrderAmount) {
-      return NextResponse.json(
-        { error: `الحد الأدنى لاستخدام هذا الكوبون هو ${coupon.minOrderAmount} ج.م` },
-        { status: 400 }
-      )
-    }
-
-    // Check restaurant restriction if any
-    if (coupon.restaurantId && coupon.restaurantId !== restaurantId) {
-      return NextResponse.json(
-        { error: "هذا الكوبون غير مخصص لطلبات هذا المطعم" },
-        { status: 400 }
-      )
-    }
-
-    // Calculate discount amount
-    let discountAmount = 0
-    if (coupon.discountType === "percentage") {
-      discountAmount = subtotal * (coupon.discountValue / 100)
-      if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) {
-        discountAmount = coupon.maxDiscount
-      }
-    } else {
-      discountAmount = coupon.discountValue
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
     return NextResponse.json({
@@ -58,7 +34,7 @@ export async function POST(req: Request) {
         code: coupon.code,
         discountType: coupon.discountType,
         discountValue: coupon.discountValue,
-        discountAmount: Math.round(discountAmount * 100) / 100,
+        discountAmount: validation.discountAmount,
       },
     })
   } catch (error) {

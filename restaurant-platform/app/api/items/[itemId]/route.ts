@@ -26,8 +26,8 @@ export async function PATCH(
       },
     })
 
-    if (!item) {
-      return NextResponse.json({ error: "الصنف غير موجود" }, { status: 404 })
+    if (!item || !item.category || !item.category.branch) {
+      return NextResponse.json({ error: "الصنف أو الفرع غير موجود" }, { status: 404 })
     }
 
     const access = await getRestaurantAccess(user.id, item.category.branch.restaurantId)
@@ -104,8 +104,8 @@ export async function DELETE(
       },
     })
 
-    if (!item) {
-      return NextResponse.json({ error: "الصنف غير موجود" }, { status: 404 })
+    if (!item || !item.category || !item.category.branch) {
+      return NextResponse.json({ error: "الصنف أو الفرع غير موجود" }, { status: 404 })
     }
 
     const access = await getRestaurantAccess(user.id, item.category.branch.restaurantId)

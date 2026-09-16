@@ -22,8 +22,8 @@ export async function POST(
       },
     })
 
-    if (!category) {
-      return NextResponse.json({ error: "القسم غير موجود" }, { status: 404 })
+    if (!category || !category.branch) {
+      return NextResponse.json({ error: "القسم أو الفرع غير موجود" }, { status: 404 })
     }
 
     const access = await getRestaurantAccess(user.id, category.branch.restaurantId)

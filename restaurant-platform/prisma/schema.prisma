@@ -146,16 +146,19 @@ model PaymentNumber {
 }
 
 model Branch {
-  id           String     @id @default(cuid())
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  name         String     @default("الفرع الرئيسي")
-  address      String
-  lat          Float
-  lng          Float
-  phone        String
-  openingHours Json
-  isActive     Boolean    @default(true)
+  id               String   @id @default(cuid())
+  restaurantId     String
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name             String   @default("الفرع الرئيسي")
+  address          String
+  lat              Float
+  lng              Float
+  phone            String
+  openingHours     Json
+  isActive         Boolean  @default(true)
+  deliveryRadiusKm Float    @default(10.0)
+  baseDeliveryFee  Float    @default(15.0)
+  feePerKm         Float    @default(3.0)
 
   menuCategories  MenuCategory[]
   orders          Order[]
@@ -184,8 +187,34 @@ model MenuItem {
   image       String?
   isAvailable Boolean      @default(true)
 
-  orderItems  OrderItem[]
-  branchItems BranchMenuItem[]
+  orderItems   OrderItem[]
+  branchItems  BranchMenuItem[]
+  optionGroups ItemOptionGroup[]
+}
+
+model ItemOptionGroup {
+  id            String       @id @default(cuid())
+  menuItemId    String
+  menuItem      MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  name          String
+  selectionType String       @default("single")
+  isRequired    Boolean      @default(false)
+  minSelect     Int          @default(0)
+  maxSelect     Int          @default(1)
+  order         Int          @default(0)
+  createdAt     DateTime     @default(now())
+
+  options       ItemOption[]
+}
+
+model ItemOption {
+  id            String          @id @default(cuid())
+  optionGroupId String
+  optionGroup   ItemOptionGroup @relation(fields: [optionGroupId], references: [id], onDelete: Cascade)
+  name          String
+  price         Float           @default(0.0)
+  isDefault     Boolean         @default(false)
+  order         Int             @default(0)
 }
 
 model BranchMenuItem {
@@ -225,6 +254,9 @@ model Order {
   status             OrderStatus   @default(pending)
   totalPrice         Float
   discountAmount     Float         @default(0.0)
+  deliveryFee        Float         @default(0.0)
+  distanceKm         Float         @default(0.0)
+  cancellationReason String?
   couponId           String?
   coupon             Coupon?       @relation(fields: [couponId], references: [id])
   deliveryAddressId  String
@@ -242,14 +274,15 @@ model Order {
 }
 
 model OrderItem {
-  id         String   @id @default(cuid())
-  orderId    String
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItemId String
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  quantity   Int
-  price      Float
-  notes      String?
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId      String
+  menuItem        MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity        Int
+  price           Float
+  notes           String?
+  selectedOptions Json?
 }
 
 model Review {

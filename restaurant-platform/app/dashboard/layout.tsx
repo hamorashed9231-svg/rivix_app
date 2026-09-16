@@ -15,7 +15,8 @@ import {
   UserCheck,
   Users,
   CreditCard,
-  CheckSquare
+  CheckSquare,
+  MapPin
 } from "lucide-react"
 import { SignOutButton } from "@/components/SignOutButton"
 
@@ -65,10 +66,11 @@ export default async function DashboardLayout({
     { name: "تقارير المبيعات والتحليلات", href: "/dashboard/restaurant/analytics", icon: TrendingUp },
     { name: "إدارة المنيو والأصناف", href: "/dashboard/restaurant/menu", icon: UtensilsCrossed },
     { name: "إدارة الفروع", href: "/dashboard/restaurant/branches", icon: GitFork },
+    { name: "خريطة مواقع وتحليلات العملاء", href: "/dashboard/restaurant/customers-map", icon: MapPin },
     { name: "شاشة استقبال وتوجيه الطلبات", href: "/dashboard/orders", icon: ShoppingBag },
   ]
 
-  const navItems = isAdmin ? adminNav : ownerNav
+  const navItems: { name: string; href: string; icon: any; badge?: number }[] = isAdmin ? adminNav : ownerNav
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col md:flex-row">

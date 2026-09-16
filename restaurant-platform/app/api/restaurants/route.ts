@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         branches: {
           create: {
             address: "الفرع الرئيسي",
-            phone: user.phone || "0500000000",
+            phone: (user as any).phone || "0500000000",
             lat: 24.7136,
             lng: 46.6753,
             openingHours: { open: "10:00 AM", close: "12:00 AM" },

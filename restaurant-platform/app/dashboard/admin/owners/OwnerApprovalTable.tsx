@@ -147,7 +147,7 @@ export function OwnerApprovalTable({
                         <div className="flex items-center justify-center gap-2">
                           <Button
                             size="sm"
-                            variant="success"
+                            variant="primary"
                             isLoading={isLoading}
                             onClick={() => handleUpdateStatus(owner.id, "approved")}
                             className="px-3 py-1.5 text-xs font-bold flex items-center gap-1 cursor-pointer"
@@ -238,7 +238,7 @@ export function OwnerApprovalTable({
                         ) : (
                           <Button
                             size="sm"
-                            variant="success"
+                            variant="primary"
                             isLoading={isLoading}
                             onClick={() => handleUpdateStatus(owner.id, "approved")}
                             className="px-2.5 py-1 text-[11px] font-bold cursor-pointer"

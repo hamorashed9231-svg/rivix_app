@@ -9,6 +9,7 @@ interface RestaurantContextType {
   loading: boolean;
   error: string | null;
   refetchRestaurantData: () => Promise<void>;
+  setRestaurant: (restaurant: RestaurantData | null) => void;
 }
 
 const RestaurantContext = createContext<RestaurantContextType | undefined>(undefined);
@@ -67,6 +68,7 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         loading,
         error,
         refetchRestaurantData: fetchData,
+        setRestaurant,
       }}
     >
       {children}
