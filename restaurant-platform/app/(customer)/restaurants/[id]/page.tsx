@@ -8,6 +8,9 @@ import { RestaurantReviewsSection } from "@/components/RestaurantReviewsSection"
 
 import { checkBranchOpenStatus } from "@/lib/opening-hours"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function RestaurantDetailPage({
   params,
 }: {
