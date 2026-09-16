@@ -40,7 +40,8 @@ jobs:
       - name: Verify Next.js Production Build
         run: npm run build
         env:
-          DATABASE_URL: "file:./dev.db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/testdb?connect_timeout=1"
+          NEXTAUTH_SECRET: "ci_testing_secret_key_12345"
 
   mobile-ci:
     name: Mobile App (Expo / React Native) - Typecheck & Test
