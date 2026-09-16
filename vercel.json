@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "cd restaurant-platform && npx prisma generate && npm run build",
+  "outputDirectory": "restaurant-platform/.next",
+  "installCommand": "cd restaurant-platform && npm install"
+}

@@ -8,10 +8,7 @@ if (!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL === "") {
   }
 }
 
-const nextConfig: any = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
