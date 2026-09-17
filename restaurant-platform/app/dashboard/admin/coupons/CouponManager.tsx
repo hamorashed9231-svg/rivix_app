@@ -12,6 +12,7 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
   const [discountValue, setDiscountValue] = useState("")
   const [minOrderAmount, setMinOrderAmount] = useState("")
   const [maxDiscount, setMaxDiscount] = useState("")
+  const [targetScope, setTargetScope] = useState<"order" | "menu" | "item">("order")
   const [loading, setLoading] = useState(false)
 
   const handleCreateCoupon = async (e: React.FormEvent) => {
@@ -29,6 +30,7 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
           discountValue,
           minOrderAmount,
           maxDiscount,
+          targetScope,
         }),
       })
 
@@ -40,6 +42,7 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
         setDiscountValue("")
         setMinOrderAmount("")
         setMaxDiscount("")
+        setTargetScope("order")
         setShowAddForm(false)
       } else {
         alert(data.error || "حدث خطأ أثناء إضافة الكوبون")
@@ -87,6 +90,19 @@ export function CouponManager({ initialCoupons }: { initialCoupons: any[] }) {
                 className="w-full bg-slate-900 border border-slate-700 px-3 py-2.5 rounded-lg text-white font-mono text-sm uppercase focus:outline-none focus:border-cyan-400"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block text-slate-300 mb-1 font-semibold">نطاق تطبيق الخصم</label>
+              <select
+                value={targetScope}
+                onChange={(e: any) => setTargetScope(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 px-3 py-2.5 rounded-lg text-white text-xs focus:outline-none focus:border-cyan-400 font-bold"
+              >
+                <option value="order">على إجمالي الطلب بالكامل (Full Order Subtotal)</option>
+                <option value="menu">على المنيو ككل لمطعم محدد (Entire Restaurant Menu)</option>
+                <option value="item">على صنف محدد في المنيو (Specific Menu Item)</option>
+              </select>
             </div>
 
             <div>

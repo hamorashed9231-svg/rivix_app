@@ -5,7 +5,7 @@ import { calculateCouponDiscount } from "@/lib/coupon-calculator"
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { code, subtotal, restaurantId } = body
+    const { code, subtotal, restaurantId, cartItems } = body
 
     if (!code || subtotal === undefined) {
       return NextResponse.json({ error: "كود الخصم والمبلغ مطلوبان" }, { status: 400 })
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     // Validate & Calculate discount using pure helper logic
-    const validation = calculateCouponDiscount(coupon, subtotal, restaurantId)
+    const validation = calculateCouponDiscount(coupon, subtotal, restaurantId, cartItems)
 
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
@@ -35,6 +35,8 @@ export async function POST(req: Request) {
         discountType: coupon.discountType,
         discountValue: coupon.discountValue,
         discountAmount: validation.discountAmount,
+        targetScope: coupon.targetScope,
+        targetMenuItemId: coupon.targetMenuItemId,
       },
     })
   } catch (error) {

@@ -21,6 +21,12 @@ export interface DeliveryCoverageResult {
   reason?: string;
 }
 
+export interface CartItemForDiscount {
+  menuItemId: string;
+  price: number;
+  quantity: number;
+}
+
 export interface CouponData {
   id: string;
   code: string;
@@ -31,10 +37,14 @@ export interface CouponData {
   discountType: 'percentage' | 'fixed' | string;
   discountValue: number;
   maxDiscount?: number | null;
+  targetScope?: 'order' | 'menu' | 'item' | string;
+  targetMenuItemId?: string | null;
 }
 
 export interface CouponValidationResult {
   valid: boolean;
   error?: string;
   discountAmount?: number;
+  targetScope?: string;
+  targetMenuItemId?: string | null;
 }

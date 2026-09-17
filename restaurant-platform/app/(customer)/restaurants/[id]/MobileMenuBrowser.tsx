@@ -25,6 +25,7 @@ export interface MenuItemData {
   name: string
   description?: string | null
   price: number
+  originalPrice?: number | null
   image?: string | null
   isAvailable: boolean
   optionGroups?: ItemOptionGroupData[]
@@ -317,13 +318,23 @@ export function MobileMenuBrowser({
                           </div>
                         )}
 
-                        <div className="pt-1 flex items-center justify-between">
+                        <div className="pt-1 flex items-center gap-2">
                           <span
                             className="text-xs font-black"
                             style={{ color: "var(--restaurant-primary, #f37f20)" }}
                           >
                             {hasOptions ? `تبدأ من ${item.price} ج.م` : `${item.price} ج.م`}
                           </span>
+                          {item.originalPrice && item.originalPrice > item.price && (
+                            <span className="text-[11px] text-slate-500 line-through font-semibold">
+                              {item.originalPrice} ج.م
+                            </span>
+                          )}
+                          {item.originalPrice && item.originalPrice > item.price && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-black">
+                              خصم 🔥
+                            </span>
+                          )}
                         </div>
                       </div>
 

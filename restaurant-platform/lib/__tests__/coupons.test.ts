@@ -68,4 +68,24 @@ describe('Coupon Calculation Unit Tests', () => {
     expect(resMatch.valid).toBe(true)
     expect(resMatch.discountAmount).toBe(40)
   })
+
+  it('calculates item-specific coupon discount correctly', () => {
+    const itemCoupon: CouponData = {
+      ...baseCoupon,
+      targetScope: 'item',
+      targetMenuItemId: 'item-kebab-123',
+      discountType: 'percentage',
+      discountValue: 10, // 10%
+    }
+
+    const cartItems = [
+      { menuItemId: 'item-kebab-123', price: 100, quantity: 2 }, // 200 ج.م
+      { menuItemId: 'item-other-999', price: 150, quantity: 1 }, // 150 ج.م
+    ]
+
+    const res = calculateCouponDiscount(itemCoupon, 350, undefined, cartItems)
+    expect(res.valid).toBe(true)
+    // 10% of 200 = 20 ج.م
+    expect(res.discountAmount).toBe(20)
+  })
 })

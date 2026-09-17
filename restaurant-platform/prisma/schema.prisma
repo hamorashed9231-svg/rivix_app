@@ -190,18 +190,20 @@ model MenuCategory {
 }
 
 model MenuItem {
-  id          String       @id @default(cuid())
-  categoryId  String
-  category    MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
-  price       Float
-  image       String?
-  isAvailable Boolean      @default(true)
+  id            String       @id @default(cuid())
+  categoryId    String
+  category      MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  price         Float
+  originalPrice Float?
+  image         String?
+  isAvailable   Boolean      @default(true)
 
-  orderItems   OrderItem[]
-  branchItems  BranchMenuItem[]
-  optionGroups ItemOptionGroup[]
+  orderItems      OrderItem[]
+  branchItems     BranchMenuItem[]
+  optionGroups    ItemOptionGroup[]
+  targetedCoupons Coupon[]          @relation("TargetMenuItemCoupons")
 }
 
 model ItemOptionGroup {
@@ -216,7 +218,7 @@ model ItemOptionGroup {
   order         Int          @default(0)
   createdAt     DateTime     @default(now())
 
-  options       ItemOption[]
+  options ItemOption[]
 }
 
 model ItemOption {
@@ -242,17 +244,20 @@ model BranchMenuItem {
 }
 
 model Coupon {
-  id             String       @id @default(cuid())
-  code           String       @unique
-  discountType   DiscountType @default(percentage)
-  discountValue  Float
-  minOrderAmount Float        @default(0.0)
-  maxDiscount    Float?
-  expiresAt      DateTime?
-  isActive       Boolean      @default(true)
-  restaurantId   String?
-  restaurant     Restaurant?  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  createdAt      DateTime     @default(now())
+  id               String       @id @default(cuid())
+  code             String       @unique
+  discountType     DiscountType @default(percentage)
+  discountValue    Float
+  minOrderAmount   Float        @default(0.0)
+  maxDiscount      Float?
+  expiresAt        DateTime?
+  isActive         Boolean      @default(true)
+  restaurantId     String?
+  restaurant       Restaurant?  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  targetScope      String       @default("order")
+  targetMenuItemId String?
+  targetMenuItem   MenuItem?    @relation("TargetMenuItemCoupons", fields: [targetMenuItemId], references: [id], onDelete: SetNull)
+  createdAt        DateTime     @default(now())
 
   orders Order[]
 }

@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { code, discountType, discountValue, minOrderAmount, maxDiscount, restaurantId } = body
+    const { code, discountType, discountValue, minOrderAmount, maxDiscount, restaurantId, targetScope, targetMenuItemId } = body
 
     if (!code || !discountValue) {
       return NextResponse.json({ error: "كود الخصم وقيمة الخصم مطلوبان" }, { status: 400 })
@@ -102,6 +102,8 @@ export async function POST(req: Request) {
         minOrderAmount: parseFloat(minOrderAmount || "0"),
         maxDiscount: maxDiscount ? parseFloat(maxDiscount) : null,
         restaurantId: restaurantId || null,
+        targetScope: targetScope || "order",
+        targetMenuItemId: targetMenuItemId || null,
         isActive: true,
       },
     })
