@@ -68,24 +68,41 @@ export async function POST(
     }
 
     const body = await req.json()
-    const { email, staffRole } = body
+    const { name, email, password, phone, staffRole } = body
 
     if (!email || typeof email !== "string" || !email.trim()) {
       return NextResponse.json({ error: "البريد الإلكتروني للموظف مطلوب" }, { status: 400 })
     }
 
+    const cleanEmail = email.trim().toLowerCase()
     const roleToAssign = staffRole === "manager" ? "manager" : "staff"
 
-    // 1. Find target user by email
-    const targetUser = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
+    // 1. Find or create target user
+    let targetUser = await prisma.user.findUnique({
+      where: { email: cleanEmail },
     })
 
     if (!targetUser) {
-      return NextResponse.json(
-        { error: "يجب أن يسجل المستخدم حساب أولاً في النظام بنفس البريد الإلكتروني" },
-        { status: 404 }
-      )
+      if (!password || password.length < 6) {
+        return NextResponse.json(
+          { error: "كلمة المرور مطلوبة لموظف جديد (6 أحرف على الأقل)" },
+          { status: 400 }
+        )
+      }
+
+      const bcrypt = (await import("bcryptjs")).default
+      const hashedPassword = await bcrypt.hash(password, 10)
+
+      targetUser = await prisma.user.create({
+        data: {
+          name: (name && typeof name === "string" && name.trim()) ? name.trim() : cleanEmail.split("@")[0],
+          email: cleanEmail,
+          password: hashedPassword,
+          phone: phone || null,
+          role: "customer",
+          accountStatus: "approved",
+        },
+      })
     }
 
     // 2. Check if target user is restaurant owner

@@ -42,7 +42,9 @@ export function StaffManagementClient({
 }: StaffManagementClientProps) {
   const router = useRouter()
   const [staffList, setStaffList] = useState<StaffItem[]>(initialStaff)
+  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [staffRole, setStaffRole] = useState<"manager" | "staff">("staff")
 
   const [error, setError] = useState("")
@@ -60,7 +62,7 @@ export function StaffManagementClient({
       const res = await fetch(`/api/restaurants/${restaurantId}/staff`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), staffRole }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password: password.trim(), staffRole }),
       })
 
       const data = await res.json()
@@ -68,8 +70,10 @@ export function StaffManagementClient({
       if (!res.ok) {
         setError(data.error || "حدث خطأ أثناء إضافة الموظف")
       } else {
-        setSuccess("تم إضافة الموظف لطاقم المطعم بنجاح! 🎉")
+        setSuccess("تم إضافة الموظف وإنشاء حساب تسجيل الدخول بنجاح! 🎉")
+        setName("")
         setEmail("")
+        setPassword("")
         setStaffList((prev) => [data.staff, ...prev])
         router.refresh()
       }
@@ -161,10 +165,25 @@ export function StaffManagementClient({
           <UserPlus className="w-5 h-5 text-brand-sky" /> إضافة موظف جديد لطاقم {restaurantName}
         </h2>
 
-        <form onSubmit={handleAddStaff} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div className="md:col-span-1">
+        <form onSubmit={handleAddStaff} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <div>
+            <label htmlFor="staff-name" className="block text-xs font-bold text-brand-gray-300 mb-1.5">
+              اسم الموظف <span className="text-brand-danger">*</span>
+            </label>
+            <input
+              id="staff-name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="مثال: أحمد محمود"
+              className="w-full rounded-xl bg-brand-gray-900 border border-brand-gray-800 px-3.5 py-2.5 text-xs text-brand-white placeholder-brand-gray-500 focus:border-brand-sky outline-none transition-all"
+            />
+          </div>
+
+          <div>
             <label htmlFor="staff-email" className="block text-xs font-bold text-brand-gray-300 mb-1.5">
-              البريد الإلكتروني للموظف <span className="text-brand-danger">*</span>
+              البريد الإلكتروني <span className="text-brand-danger">*</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-brand-gray-400">
@@ -180,34 +199,46 @@ export function StaffManagementClient({
                 className="w-full rounded-xl bg-brand-gray-900 border border-brand-gray-800 pr-10 pl-4 py-2.5 text-xs text-brand-white placeholder-brand-gray-500 focus:border-brand-sky outline-none transition-all"
               />
             </div>
-            <p className="text-[10px] text-brand-gray-400 mt-1">
-              يجب أن يملك الموظف حساباً مسجلاً بالفعل بالنظام.
-            </p>
+          </div>
+
+          <div>
+            <label htmlFor="staff-pass" className="block text-xs font-bold text-brand-gray-300 mb-1.5">
+              كلمة المرور للدخول <span className="text-brand-danger">*</span>
+            </label>
+            <input
+              id="staff-pass"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-xl bg-brand-gray-900 border border-brand-gray-800 px-3.5 py-2.5 text-xs text-brand-white placeholder-brand-gray-500 focus:border-brand-sky outline-none transition-all"
+            />
           </div>
 
           <div>
             <label htmlFor="staff-role" className="block text-xs font-bold text-brand-gray-300 mb-1.5">
-              دور وصلاحيات الموظف <span className="text-brand-danger">*</span>
+              الدور والصلاحيات <span className="text-brand-danger">*</span>
             </label>
             <select
               id="staff-role"
               value={staffRole}
               onChange={(e) => setStaffRole(e.target.value as "manager" | "staff")}
-              className="w-full rounded-xl bg-brand-gray-900 border border-brand-gray-800 px-4 py-2.5 text-xs text-brand-white outline-none focus:border-brand-sky transition-all"
+              className="w-full rounded-xl bg-brand-gray-900 border border-brand-gray-800 px-3 py-2.5 text-xs text-brand-white outline-none focus:border-brand-sky transition-all"
             >
-              <option value="staff">موظف تشغيل (Staff) — إدارة الطلبات فقط</option>
-              <option value="manager">مدير مطعم (Manager) — إدارة شاملة للمنيو والطلبات والموظفين</option>
+              <option value="staff">موظف (Staff) — الطلبات فقط</option>
+              <option value="manager">مدير (Manager) — إدارة شاملة</option>
             </select>
           </div>
 
-          <div>
+          <div className="lg:col-span-4">
             <Button
               type="submit"
               variant="primary"
               isLoading={loading}
               className="w-full text-xs font-extrabold cursor-pointer py-3"
             >
-              إضافة الموظف الآن ➕
+              حفظ وإنشاء حساب الموظف ➕
             </Button>
           </div>
         </form>
