@@ -1,12 +1,12 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const slug = process.env.EXPO_PUBLIC_RESTAURANT_SLUG || 'demo-restaurant';
+  const slug = process.env.EXPO_PUBLIC_RESTAURANT_SLUG || 'am-eissa';
   const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const appName = process.env.EXPO_PUBLIC_APP_NAME || 'Rivix Restaurant';
-  const androidPackage = process.env.EXPO_PUBLIC_ANDROID_PACKAGE || `com.rivix.${cleanSlug || 'app'}`;
-  const iosBundleId = process.env.EXPO_PUBLIC_IOS_BUNDLE_ID || `com.rivix.${cleanSlug || 'app'}`;
-  const scheme = process.env.EXPO_PUBLIC_SCHEME || `rivix${cleanSlug || 'app'}`;
+  const appName = process.env.EXPO_PUBLIC_APP_NAME || 'مطعم عم عيسى';
+  const androidPackage = process.env.EXPO_PUBLIC_ANDROID_PACKAGE || `com.rivix.${cleanSlug || 'ameissa'}`;
+  const iosBundleId = process.env.EXPO_PUBLIC_IOS_BUNDLE_ID || `com.rivix.${cleanSlug || 'ameissa'}`;
+  const scheme = process.env.EXPO_PUBLIC_SCHEME || `rivix${cleanSlug || 'ameissa'}`;
 
   return {
     ...config,
@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       bundleIdentifier: iosBundleId,
       infoPlist: {
         NSLocationWhenInUseUsageDescription:
-          'نحتاج موقعك لتحديد عنوان التوصيل بدقة وحساب المسافة من أقرب فرع',
+          'نحتاج موقعك لتحديد عنوان التوصيل بدقة وحساب المسافة من أقرب فرع لمطعم عم عيسى',
       },
     },
     android: {
@@ -49,7 +49,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'expo-notifications',
         {
           icon: './assets/images/icon.png',
-          color: '#2196F3',
+          color: '#f37f20',
         },
       ],
     ],
@@ -57,7 +57,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       typedRoutes: true,
     },
     extra: {
-      apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000',
+      apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://restaurant-platform-ecru.vercel.app',
       restaurantSlug: slug,
       appName: appName,
     },
