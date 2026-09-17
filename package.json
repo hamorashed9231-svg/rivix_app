@@ -1,0 +1,11 @@
+{
+  "name": "rivix-monorepo",
+  "private": true,
+  "workspaces": [
+    "restaurant-platform",
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspace=restaurant-platform --workspace=packages/shared"
+  }
+}

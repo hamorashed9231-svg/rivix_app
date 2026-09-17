@@ -13,7 +13,7 @@ describe('Delivery Calculator Unit Tests', () => {
     lng: 46.6753,
     deliveryRadiusKm: 10.0,
     baseDeliveryFee: 15.0,
-    feePerKm: 3.0,
+    pricePerKm: 3.0,
     isActive: true,
   }
 

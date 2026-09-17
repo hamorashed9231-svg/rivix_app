@@ -66,7 +66,7 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { name, address, phone, lat, lng, isActive, openingHours, deliveryRadiusKm, baseDeliveryFee, feePerKm } = body
+    const { name, address, phone, lat, lng, isActive, openingHours, deliveryEnabled, deliveryRadiusKm, baseDeliveryFee, pricePerKm, minOrderForDelivery } = body
 
     if (!name || !address || !phone || lat === undefined || lng === undefined) {
       return NextResponse.json(
@@ -85,9 +85,11 @@ export async function POST(
         lng: parseFloat(lng),
         isActive: isActive ?? true,
         openingHours: openingHours || { open: "10:00 AM", close: "12:00 AM" },
+        deliveryEnabled: deliveryEnabled ?? true,
         deliveryRadiusKm: deliveryRadiusKm ? parseFloat(deliveryRadiusKm) : 10.0,
         baseDeliveryFee: baseDeliveryFee ? parseFloat(baseDeliveryFee) : 15.0,
-        feePerKm: feePerKm ? parseFloat(feePerKm) : 3.0,
+        pricePerKm: pricePerKm ? parseFloat(pricePerKm) : 3.0,
+        minOrderForDelivery: minOrderForDelivery ? parseFloat(minOrderForDelivery) : 0.0,
       },
       include: {
         _count: {

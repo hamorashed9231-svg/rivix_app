@@ -1,7 +1,6 @@
 "use client"
 
-import React, { useEffect } from "react"
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet"
+import { MapContainer, TileLayer, Marker, Circle, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
@@ -20,6 +19,8 @@ L.Marker.prototype.options.icon = DefaultIcon
 interface LocationPickerMapProps {
   lat: number
   lng: number
+  deliveryRadiusKm?: number
+  deliveryEnabled?: boolean
   onLocationChange: (lat: number, lng: number) => void
 }
 
@@ -42,7 +43,13 @@ function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
   return null
 }
 
-export default function LocationPickerMap({ lat, lng, onLocationChange }: LocationPickerMapProps) {
+export default function LocationPickerMap({
+  lat,
+  lng,
+  deliveryRadiusKm,
+  deliveryEnabled = true,
+  onLocationChange,
+}: LocationPickerMapProps) {
   const position: [number, number] = [lat || 30.0444, lng || 31.2357] // Fallback coordinates
 
   return (
@@ -57,6 +64,13 @@ export default function LocationPickerMap({ lat, lng, onLocationChange }: Locati
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {deliveryEnabled && deliveryRadiusKm && deliveryRadiusKm > 0 ? (
+          <Circle
+            center={position}
+            radius={deliveryRadiusKm * 1000}
+            pathOptions={{ color: "#06b6d4", fillColor: "#06b6d4", fillOpacity: 0.15 }}
+          />
+        ) : null}
         <Marker
           position={position}
           draggable={true}

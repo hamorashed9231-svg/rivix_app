@@ -8,8 +8,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    include: ['**/*.test.{ts,tsx}', '../packages/shared/src/**/*.test.ts'],
     alias: {
       '@': path.resolve(__dirname, './'),
+      '@rivix/shared': path.resolve(__dirname, '../packages/shared/src/index.ts'),
     },
   },
 })

@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@rivix/shared": ["../packages/shared/src/index.ts"],
+      "@rivix/shared/*": ["../packages/shared/src/*"]
     }
   },
   "include": [

@@ -16,6 +16,7 @@ import {
   ArrowRight,
   AlertCircle,
 } from "lucide-react"
+import { AuthShell } from "@/components/auth/AuthShell"
 
 export default function CustomerRegisterPage() {
   const router = useRouter()
@@ -105,11 +106,7 @@ export default function CustomerRegisterPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-950 flex items-center justify-center overflow-hidden selection:bg-brand-sky selection:text-slate-950 px-4 py-8">
-      {/* Ambient background glow elements */}
-      <div className="absolute top-1/4 -right-32 w-96 h-96 bg-brand-sky/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 -left-32 w-96 h-96 bg-brand-navy/60 rounded-full blur-[120px] pointer-events-none" />
-
+    <AuthShell dir="rtl">
       <div className="w-full max-w-md mx-auto space-y-6 relative z-10">
         {/* Header */}
         <div className="text-center space-y-3">
@@ -288,6 +285,6 @@ export default function CustomerRegisterPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AuthShell>
   )
 }
