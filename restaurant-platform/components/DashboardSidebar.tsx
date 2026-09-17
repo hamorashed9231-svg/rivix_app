@@ -11,13 +11,40 @@ import {
   Menu,
   X,
   Store,
+  LayoutDashboard,
+  UtensilsCrossed,
+  GitFork,
+  ShoppingBag,
+  ShieldCheck,
+  TrendingUp,
+  Tag,
+  Users,
+  CreditCard,
+  CheckSquare,
+  MapPin,
 } from "lucide-react"
 import { SignOutButton } from "@/components/SignOutButton"
+
+const iconMap: Record<string, any> = {
+  LayoutDashboard,
+  UtensilsCrossed,
+  GitFork,
+  ShoppingBag,
+  ShieldCheck,
+  TrendingUp,
+  Tag,
+  Store,
+  UserCheck,
+  Users,
+  CreditCard,
+  CheckSquare,
+  MapPin,
+}
 
 interface NavItem {
   name: string
   href: string
-  icon: any
+  iconName: string
   badge?: number
 }
 
@@ -126,7 +153,7 @@ export function DashboardSidebar({
           {/* Navigation Links */}
           <nav className="p-3 space-y-1.5 overflow-y-auto max-h-[calc(100vh-140px)] scrollbar-thin scrollbar-thumb-slate-700">
             {navItems.map((item) => {
-              const Icon = item.icon
+              const Icon = iconMap[item.iconName] || Store
               const isActive = pathname === item.href
               return (
                 <Link
