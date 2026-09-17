@@ -109,12 +109,18 @@ export default async function CustomerRestaurantBySlugPage({
       <div className="px-4 -mt-14 relative z-10 space-y-4">
         <div className="flex justify-between items-end">
           <div className="w-24 h-24 rounded-3xl bg-[var(--restaurant-secondary)] border-4 border-[var(--restaurant-primary)] p-1.5 shadow-2xl overflow-hidden relative">
-            <Image
-              src={restaurant.logo || "/logo.jpg"}
-              alt={restaurant.name}
-              fill
-              className="object-cover rounded-2xl"
-            />
+            {restaurant.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={restaurant.logo}
+                alt={restaurant.name}
+                className="w-full h-full object-cover rounded-2xl"
+              />
+            ) : (
+              <div className="w-full h-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-2xl font-bold rounded-2xl">
+                {restaurant.name.charAt(0)}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

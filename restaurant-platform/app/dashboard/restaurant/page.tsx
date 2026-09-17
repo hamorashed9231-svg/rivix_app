@@ -71,9 +71,20 @@ export default async function RestaurantDashboardPage() {
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0B192C] via-slate-900 to-[#0B192C] border border-slate-800 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
         <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-2xl font-black shrink-0">
-            {restaurant.name.charAt(0)}
-          </div>
+          {restaurant.logo ? (
+            <div className="w-16 h-16 rounded-2xl bg-slate-950 border-2 border-amber-500/50 p-1 shadow-xl overflow-hidden relative shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={restaurant.logo}
+                alt={restaurant.name}
+                className="w-full h-full object-cover rounded-xl"
+              />
+            </div>
+          ) : (
+            <div className="w-16 h-16 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-2xl font-black shrink-0">
+              {restaurant.name.charAt(0)}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-extrabold text-white">{restaurant.name}</h1>

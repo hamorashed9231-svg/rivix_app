@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowRight, Star, Clock, MapPin, Phone } from "lucide-react"
 import { MobileMenuBrowser } from "./MobileMenuBrowser"
 import { RestaurantReviewsSection } from "@/components/RestaurantReviewsSection"
-
+import { RestaurantThemeProvider } from "@/components/RestaurantThemeProvider"
 import { checkBranchOpenStatus } from "@/lib/opening-hours"
 
 export const dynamic = "force-dynamic"
@@ -60,7 +60,11 @@ export default async function RestaurantDetailPage({
   const branchStatus = checkBranchOpenStatus(defaultBranch?.openingHours, defaultBranch?.isActive)
 
   return (
-    <div className="space-y-6 pb-24">
+    <RestaurantThemeProvider
+      primaryColor={restaurant.primaryColor || "#f37f20"}
+      secondaryColor={restaurant.secondaryColor || "#b18168"}
+      className="min-h-screen bg-slate-950 text-slate-100 space-y-6 pb-24"
+    >
       {/* Mobile Top Header Banner */}
       <div className="relative h-48 w-full bg-slate-900">
         <Image
@@ -83,13 +87,19 @@ export default async function RestaurantDetailPage({
       {/* Restaurant Header Details */}
       <div className="px-4 -mt-12 relative z-10 space-y-3">
         <div className="flex justify-between items-end">
-          <div className="w-20 h-20 rounded-3xl bg-[#0B192C] border-2 border-cyan-400 p-1.5 shadow-2xl overflow-hidden relative">
-            <Image
-              src={restaurant.logo || "/logo.jpg"}
-              alt={restaurant.name}
-              fill
-              className="object-cover rounded-2xl"
-            />
+          <div className="w-20 h-20 rounded-3xl bg-[#0B192C] border-2 border-[var(--restaurant-primary,#f37f20)] p-1.5 shadow-2xl overflow-hidden relative">
+            {restaurant.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={restaurant.logo}
+                alt={restaurant.name}
+                className="w-full h-full object-cover rounded-2xl"
+              />
+            ) : (
+              <div className="w-full h-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-xl font-bold rounded-2xl">
+                {restaurant.name.charAt(0)}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -117,11 +127,11 @@ export default async function RestaurantDetailPage({
 
         {/* Info Badges */}
         <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-300 pt-1 border-t border-slate-800/80">
-          <span className="flex items-center gap-1 font-bold text-cyan-400">
+          <span className="flex items-center gap-1 font-bold text-[var(--restaurant-primary,#f37f20)]">
             <Clock className="w-3.5 h-3.5" /> {branchStatus.formattedHours}
           </span>
           <span className="flex items-center gap-1 text-slate-400">
-            <MapPin className="w-3.5 h-3.5 text-cyan-400" /> {defaultBranch?.address || "الفرع الرئيسي"}
+            <MapPin className="w-3.5 h-3.5 text-[var(--restaurant-primary,#f37f20)]" /> {defaultBranch?.address || "الفرع الرئيسي"}
           </span>
         </div>
       </div>
@@ -141,6 +151,6 @@ export default async function RestaurantDetailPage({
       <div className="px-4">
         <RestaurantReviewsSection restaurantId={restaurant.id} />
       </div>
-    </div>
+    </RestaurantThemeProvider>
   )
 }

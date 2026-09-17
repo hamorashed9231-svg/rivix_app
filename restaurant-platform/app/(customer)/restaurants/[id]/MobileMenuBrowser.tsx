@@ -290,10 +290,10 @@ export function MobileMenuBrowser({
 
                       {/* Content */}
                       <div className="flex-1 min-w-0 space-y-1">
-                        <h4 className="font-extrabold text-sm text-white truncate">
+                        <h4 className="font-extrabold text-sm text-white truncate" style={{ color: "#ffffff" }}>
                           {item.name}
                         </h4>
-                        <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                        <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
                           {item.description || "طبق شهي طازج يجهز بعناية فائقة"}
                         </p>
 
@@ -320,7 +320,7 @@ export function MobileMenuBrowser({
                         <div className="pt-1 flex items-center justify-between">
                           <span
                             className="text-xs font-black"
-                            style={{ color: "var(--restaurant-primary, #2196F3)" }}
+                            style={{ color: "var(--restaurant-primary, #f37f20)" }}
                           >
                             {hasOptions ? `تبدأ من ${item.price} ج.م` : `${item.price} ج.م`}
                           </span>
@@ -350,7 +350,7 @@ export function MobileMenuBrowser({
                                 e.stopPropagation()
                                 updateQuantity(item.id, 1)
                               }}
-                              style={{ backgroundColor: "var(--restaurant-primary, #2196F3)" }}
+                              style={{ backgroundColor: "var(--restaurant-primary, #f37f20)" }}
                               className="w-7 h-7 rounded-xl text-white flex items-center justify-center transition-all cursor-pointer font-bold shadow-md"
                             >
                               <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -366,9 +366,9 @@ export function MobileMenuBrowser({
                             style={
                               isRecentlyAdded
                                 ? { backgroundColor: "#22C55E", color: "#ffffff" }
-                                : { backgroundColor: "var(--restaurant-primary, #2196F3)", color: "#ffffff" }
+                                : { backgroundColor: "var(--restaurant-primary, #f37f20)", color: "#ffffff" }
                             }
-                            className="px-3 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-lg cursor-pointer hover:brightness-110 active:scale-95"
+                            className="px-3 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-lg cursor-pointer hover:brightness-110 active:scale-95 text-white"
                           >
                             {isRecentlyAdded ? (
                               <>
@@ -443,7 +443,10 @@ export function MobileMenuBrowser({
                   <div key={group.id} className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-black text-white flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: "var(--restaurant-primary, #f37f20)" }}
+                        />
                         {group.name}
                       </h4>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
@@ -462,20 +465,36 @@ export function MobileMenuBrowser({
                             key={option.id}
                             type="button"
                             onClick={() => toggleOption(group, option.id)}
+                            style={
+                              isSelected
+                                ? {
+                                    backgroundColor: "rgba(243, 127, 32, 0.12)",
+                                    borderColor: "var(--restaurant-primary, #f37f20)",
+                                    color: "#ffffff",
+                                  }
+                                : {}
+                            }
                             className={`p-3 rounded-2xl border text-right transition-all flex items-center justify-between cursor-pointer ${
                               isSelected
-                                ? "bg-cyan-500/10 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-500/10"
+                                ? "shadow-md"
                                 : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white"
                             }`}
                           >
                             <div className="flex items-center gap-2">
                               <div
+                                style={
+                                  isSelected
+                                    ? {
+                                        backgroundColor: "var(--restaurant-primary, #f37f20)",
+                                        borderColor: "var(--restaurant-primary, #f37f20)",
+                                        color: "#ffffff",
+                                      }
+                                    : {}
+                                }
                                 className={`w-4 h-4 rounded-${
                                   group.selectionType === "single" ? "full" : "md"
                                 } border flex items-center justify-center transition-colors ${
-                                  isSelected
-                                    ? "bg-cyan-500 border-cyan-400 text-slate-950"
-                                    : "border-slate-600"
+                                  isSelected ? "text-white" : "border-slate-600"
                                 }`}
                               >
                                 {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -483,7 +502,10 @@ export function MobileMenuBrowser({
                               <span className="text-xs font-bold">{option.name}</span>
                             </div>
 
-                            <span className="text-xs font-black text-cyan-400">
+                            <span
+                              className="text-xs font-black"
+                              style={{ color: "var(--restaurant-primary, #f37f20)" }}
+                            >
                               {option.price > 0 ? `+${option.price} ج.م` : "متضمن"}
                             </span>
                           </button>
@@ -511,7 +533,8 @@ export function MobileMenuBrowser({
                 <button
                   type="button"
                   onClick={() => setItemQuantity((q) => q + 1)}
-                  className="w-8 h-8 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center transition-colors cursor-pointer font-bold"
+                  style={{ backgroundColor: "var(--restaurant-primary, #f37f20)" }}
+                  className="w-8 h-8 rounded-xl text-white flex items-center justify-center transition-colors cursor-pointer font-bold"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
                 </button>
@@ -520,10 +543,11 @@ export function MobileMenuBrowser({
               <button
                 type="button"
                 onClick={handleConfirmCustomizedAdd}
-                className="flex-1 py-3 px-4 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition-all shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer"
+                style={{ backgroundColor: "var(--restaurant-primary, #f37f20)" }}
+                className="flex-1 py-3 px-4 rounded-2xl text-white font-black text-xs transition-all shadow-xl hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>إضافة إلى العربة</span>
-                <span className="bg-slate-950/20 px-2 py-0.5 rounded-lg text-slate-950 font-extrabold">
+                <span className="bg-slate-950/30 px-2 py-0.5 rounded-lg text-white font-extrabold">
                   {calculateCustomizedItemPrice(selectedItemForCustomization) * itemQuantity} ج.م
                 </span>
               </button>
