@@ -142,9 +142,9 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => {
-                setEmail("admin@rivix.com")
+                setEmail("rivix@admin.com")
                 setPassword("password123")
-                handleLogin("admin@rivix.com", "password123")
+                handleLogin("rivix@admin.com", "password123")
               }}
               className="p-2.5 rounded-xl bg-brand-sky-light/10 border border-brand-sky-light/30 hover:bg-brand-sky-light/20 text-brand-sky-light font-bold text-[11px] flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
             >
