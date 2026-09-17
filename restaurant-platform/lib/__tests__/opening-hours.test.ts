@@ -21,7 +21,7 @@ describe('Opening Hours Unit Tests', () => {
     expect(statusInactive.isOpen).toBe(false)
     expect(statusInactive.reason).toBe('الفرع غير مفعّل حالياً')
 
-    const statusActive = checkBranchOpenStatus({ open: '10:00 AM', close: '11:00 PM' }, true)
+    const statusActive = checkBranchOpenStatus({ open: '10:00 AM', close: '11:00 PM' }, true, new Date('2026-09-16T14:00:00'))
     expect(statusActive.isOpen).toBe(true)
   })
 

@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, getRestaurantAccess } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser()
-
-    if (!user || user.role !== "restaurant_owner") {
-      return NextResponse.json({ error: "غير مصرح لك بهذ العمل" }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ error: "غير مصرح لك بهذ العمل" }, { status: 401 })
     }
 
     const body = await req.json()
@@ -18,9 +17,27 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "بيانات التصنيف غير مكتملة" }, { status: 400 })
       }
 
+      let targetRestaurantId = restaurantId
+      if (!targetRestaurantId && branchId) {
+        const branch = await prisma.branch.findUnique({
+          where: { id: branchId },
+          select: { restaurantId: true },
+        })
+        targetRestaurantId = branch?.restaurantId
+      }
+
+      if (!targetRestaurantId) {
+        return NextResponse.json({ error: "المطعم غير موجود" }, { status: 404 })
+      }
+
+      const access = await getRestaurantAccess(user.id, targetRestaurantId)
+      if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+        return NextResponse.json({ error: "غير مصرح لك بهذ العمل" }, { status: 403 })
+      }
+
       const newCategory = await prisma.menuCategory.create({
         data: {
-          restaurantId: restaurantId || null,
+          restaurantId: targetRestaurantId,
           branchId: branchId || null,
           name: categoryName,
           order: 1,
@@ -33,6 +50,21 @@ export async function POST(req: Request) {
     if (action === "create_item") {
       if (!categoryId || !name || !price) {
         return NextResponse.json({ error: "بيانات الصنف غير مكتملة" }, { status: 400 })
+      }
+
+      const category = await prisma.menuCategory.findUnique({
+        where: { id: categoryId },
+        select: { restaurantId: true, branch: { select: { restaurantId: true } } },
+      })
+
+      const targetRestaurantId = category?.restaurantId || category?.branch?.restaurantId
+      if (!targetRestaurantId) {
+        return NextResponse.json({ error: "التصنيف غير موجود" }, { status: 404 })
+      }
+
+      const access = await getRestaurantAccess(user.id, targetRestaurantId)
+      if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+        return NextResponse.json({ error: "غير مصرح لك بهذ العمل" }, { status: 403 })
       }
 
       const newItem = await prisma.menuItem.create({
@@ -59,9 +91,8 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const user = await getCurrentUser()
-
-    if (!user || user.role !== "restaurant_owner") {
-      return NextResponse.json({ error: "غير مصرح لك" }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ error: "غير مصرح لك" }, { status: 401 })
     }
 
     const body = await req.json()
@@ -69,6 +100,25 @@ export async function PATCH(req: Request) {
 
     if (!itemId) {
       return NextResponse.json({ error: "معرف الصنف مطلوب" }, { status: 400 })
+    }
+
+    const existingItem = await prisma.menuItem.findUnique({
+      where: { id: itemId },
+      select: {
+        category: {
+          select: { restaurantId: true, branch: { select: { restaurantId: true } } },
+        },
+      },
+    })
+
+    const targetRestaurantId = existingItem?.category?.restaurantId || existingItem?.category?.branch?.restaurantId
+    if (!targetRestaurantId) {
+      return NextResponse.json({ error: "الصنف غير موجود" }, { status: 404 })
+    }
+
+    const access = await getRestaurantAccess(user.id, targetRestaurantId)
+    if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+      return NextResponse.json({ error: "غير مصرح لك" }, { status: 403 })
     }
 
     const dataToUpdate: any = {}

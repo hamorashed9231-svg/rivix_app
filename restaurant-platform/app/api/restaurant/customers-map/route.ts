@@ -10,19 +10,31 @@ export async function GET(req: Request) {
     }
 
     const isAdmin = user.role === "admin"
-    const isOwner = user.role === "restaurant_owner"
 
-    if (!isAdmin && !isOwner) {
-      return NextResponse.json({ error: "غير مصرح لك باستعراض خريطة العملاء" }, { status: 403 })
+    let restaurantIds: string[] = []
+
+    if (isAdmin) {
+      const allRestaurants = await prisma.restaurant.findMany({ select: { id: true } })
+      restaurantIds = allRestaurants.map((r) => r.id)
+    } else {
+      const [ownedRestaurants, staffMemberships] = await Promise.all([
+        prisma.restaurant.findMany({
+          where: { ownerId: user.id },
+          select: { id: true },
+        }),
+        prisma.restaurantStaff.findMany({
+          where: { userId: user.id, isActive: true },
+          select: { restaurantId: true },
+        }),
+      ])
+
+      restaurantIds = Array.from(
+        new Set([
+          ...ownedRestaurants.map((r) => r.id),
+          ...staffMemberships.map((s) => s.restaurantId),
+        ])
+      )
     }
-
-    // 1. Get owner's restaurant IDs
-    const ownerRestaurants = await prisma.restaurant.findMany({
-      where: isAdmin ? {} : { ownerId: user.id },
-      select: { id: true, name: true },
-    })
-
-    const restaurantIds = ownerRestaurants.map((r) => r.id)
 
     if (restaurantIds.length === 0) {
       return NextResponse.json({ customers: [] })

@@ -43,3 +43,7 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# secrets & firebase admin
+service-account.json
+

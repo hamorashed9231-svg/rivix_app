@@ -60,9 +60,9 @@ export async function POST(
     const { id: restaurantId } = await params
 
     const access = await getRestaurantAccess(user.id, restaurantId)
-    if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+    if (access !== "owner" && user.role !== "admin") {
       return NextResponse.json(
-        { error: "غير مصرح لك بإضافة موظفين جدد. هذه العملية للمالك أو المدير فقط." },
+        { error: "غير مصرح لك بإضافة موظفين جدد. هذه العملية للمالك فقط." },
         { status: 403 }
       )
     }

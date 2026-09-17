@@ -26,9 +26,9 @@ export async function PATCH(
     }
 
     const access = await getRestaurantAccess(user.id, paymentNumber.restaurantId);
-    if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+    if (access !== "owner" && user.role !== "admin") {
       return NextResponse.json(
-        { error: "ليس لديك صلاحية لتعديل رقم الدفع" },
+        { error: "ليس لديك صلاحية لتعديل رقم الدفع. هذه العملية للمالك فقط." },
         { status: 403 }
       );
     }
@@ -77,9 +77,9 @@ export async function DELETE(
     }
 
     const access = await getRestaurantAccess(user.id, paymentNumber.restaurantId);
-    if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+    if (access !== "owner" && user.role !== "admin") {
       return NextResponse.json(
-        { error: "ليس لديك صلاحية لحذف رقم الدفع" },
+        { error: "ليس لديك صلاحية لحذف رقم الدفع. هذه العملية للمالك فقط." },
         { status: 403 }
       );
     }

@@ -14,7 +14,13 @@ enum Role {
   customer
   restaurant_owner
   admin
+  rider
+  control
+  supermarket_control
+  supervisor
+  restaurant_admin
 }
+
 
 enum AccountStatus {
   approved
@@ -82,6 +88,8 @@ model User {
   orders           Order[]           @relation("CustomerOrders")
   reviews          Review[]          @relation("CustomerReviews")
   staffMemberships RestaurantStaff[]
+  driverProfile    DriverProfile?
+  riderOrders      Order[]           @relation("RiderOrders")
 }
 
 model Address {
@@ -118,6 +126,7 @@ model Restaurant {
   staffMembers   RestaurantStaff[]
   paymentNumbers PaymentNumber[]
   menuCategories MenuCategory[]
+  driverProfiles DriverProfile[]
 }
 
 model RestaurantStaff {
@@ -151,8 +160,8 @@ model Branch {
   restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   name             String   @default("الفرع الرئيسي")
   address          String
-  lat              Float
-  lng              Float
+  lat              Float?
+  lng              Float?
   phone            String
   openingHours     Json
   isActive         Boolean  @default(true)
@@ -163,6 +172,7 @@ model Branch {
   menuCategories  MenuCategory[]
   orders          Order[]
   branchMenuItems BranchMenuItem[]
+  driverProfiles  DriverProfile[]
 }
 
 model MenuCategory {
@@ -261,16 +271,113 @@ model Order {
   coupon             Coupon?       @relation(fields: [couponId], references: [id])
   deliveryAddressId  String
   deliveryAddress    Address       @relation("DeliveryAddressOrders", fields: [deliveryAddressId], references: [id])
-  driverAssignmentId String?
-  posReferenceId     String?
-  paymentMethod      PaymentMethod @default(cash_on_delivery)
-  paymentProofImage  String?
-  paymentStatus      PaymentStatus @default(not_required)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  driverAssignmentId     String?
+  posReferenceId         String?
+  paymentMethod          PaymentMethod @default(cash_on_delivery)
+  paymentProofImage      String?
+  paymentStatus          PaymentStatus @default(not_required)
 
-  items  OrderItem[]
-  review Review?
+  riderId                String?
+  riderUser              User?          @relation("RiderOrders", fields: [riderId], references: [id], onDelete: SetNull)
+  riderProfileId         String?
+  riderProfile           DriverProfile? @relation("RiderProfileOrders", fields: [riderProfileId], references: [id], onDelete: SetNull)
+  riderDeliveryStatus    String?
+  riderEarnings          Float?
+  riderFeePercentage     Float?
+  tipAmount              Float?
+  podType                String?
+  deliveryOtp            String?
+  podOtpVerified         Boolean?       @default(false)
+  podSignature           String?
+  podPhoto               String?
+  deliveredPaymentMethod String?
+  deliveredLocationLat   Float?
+  deliveredLocationLng   Float?
+  podVerifiedAt          DateTime?
+  assignedAt             DateTime?
+  acceptedAt             DateTime?
+  arrivedRestaurantAt    DateTime?
+  pickedAt               DateTime?
+  onTheWayAt             DateTime?
+  arrivedCustomerAt      DateTime?
+  deliveredAt            DateTime?
+
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  items        OrderItem[]
+  review       Review?
+  chatMessages OrderChatMessage[]
+}
+
+model DriverProfile {
+  id                  String      @id @default(cuid())
+  userId              String      @unique
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code                String?     @unique
+  status              String?     @default("offline")
+  supervisorId        String?
+  restaurantId        String?
+  restaurant          Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  branchId            String?
+  branch              Branch?     @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  currentShiftStart   DateTime?
+  rating              Float?
+  ratingCount         Int?        @default(0)
+  lastSeen            DateTime?
+  lastLocationLat    Float?
+  lastLocationLng    Float?
+  fcmToken            String?
+  dailyBonus          Float?      @default(0)
+  totalWithdrawals    Float?      @default(0)
+  loans               Float?      @default(0)
+  deductions          Float?      @default(0)
+  totalCashHandedOver Float?      @default(0)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  shifts        Shift[]
+  riderLocation RiderLocation?
+  riderOrders   Order[]        @relation("RiderProfileOrders")
+}
+
+model Shift {
+  id              String        @id @default(cuid())
+  riderId         String
+  rider           DriverProfile @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  startTime       DateTime
+  endTime         DateTime?
+  durationMinutes Int?
+  autoClosed      Boolean       @default(false)
+  date            String
+  tenantId        String
+  restaurantId    String
+  branchId        String
+  createdAt       DateTime      @default(now())
+}
+
+model RiderLocation {
+  id           String        @id @default(cuid())
+  riderId      String        @unique
+  rider        DriverProfile @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  lat          Float
+  lng          Float
+  updatedAt    DateTime      @updatedAt
+  tenantId     String
+  restaurantId String
+  branchId     String
+}
+
+model OrderChatMessage {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  channel    String
+  senderId   String
+  senderName String
+  senderRole String
+  text       String
+  timestamp  DateTime @default(now())
 }
 
 model OrderItem {
@@ -300,3 +407,4 @@ model Review {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 }
+

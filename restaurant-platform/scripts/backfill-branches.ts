@@ -19,15 +19,18 @@ async function backfillBranches() {
     const branch = await prisma.branch.create({
       data: {
         restaurantId: restaurant.id,
-        address: "الفرع الرئيسي",
+        name: "الفرع الرئيسي",
+        address: "الفرع الرئيسي - يرجى تحديد الموقع على الخريطة",
         phone: "0500000000",
-        lat: 24.7136,
-        lng: 46.6753,
+        lat: null,
+        lng: null,
         openingHours: { open: "10:00 AM", close: "12:00 AM" },
-        isActive: true,
+        isActive: false, // Inactive until location is set via map picker
       },
     })
-    console.log(`✅ Created default branch "${branch.address}" (ID: ${branch.id}) for restaurant: ${restaurant.name}`)
+    console.warn(
+      `⚠️ Created default branch "${branch.name}" (ID: ${branch.id}) for restaurant "${restaurant.name}" with lat/lng left as NULL. Branch set to INACTIVE (isActive: false) until the owner sets the location on the map.`
+    )
   }
 
   console.log("🎉 Backfill completed successfully!")

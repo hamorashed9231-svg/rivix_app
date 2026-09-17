@@ -50,9 +50,9 @@ export async function POST(
     }
 
     const access = await getRestaurantAccess(user.id, restaurantId);
-    if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+    if (access !== "owner" && user.role !== "admin") {
       return NextResponse.json(
-        { error: "ليس لديك صلاحية لإضافة أرقام الدفع" },
+        { error: "ليس لديك صلاحية لإضافة أرقام الدفع. هذه العملية للمالك فقط." },
         { status: 403 }
       );
     }

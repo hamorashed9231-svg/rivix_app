@@ -1,10 +1,48 @@
 import { NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, getRestaurantAccess } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 export async function GET() {
   try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: "يجب تسجيل الدخول أولاً" }, { status: 401 })
+    }
+
+    if (user.role === "admin") {
+      const coupons = await prisma.coupon.findMany({
+        include: { restaurant: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+      })
+      return NextResponse.json({ coupons })
+    }
+
+    // Find restaurants owned by user or where user is active staff
+    const [ownedRestaurants, staffMemberships] = await Promise.all([
+      prisma.restaurant.findMany({
+        where: { ownerId: user.id },
+        select: { id: true },
+      }),
+      prisma.restaurantStaff.findMany({
+        where: { userId: user.id, isActive: true },
+        select: { restaurantId: true },
+      }),
+    ])
+
+    const accessibleRestaurantIds = Array.from(
+      new Set([
+        ...ownedRestaurants.map((r) => r.id),
+        ...staffMemberships.map((s) => s.restaurantId),
+      ])
+    )
+
     const coupons = await prisma.coupon.findMany({
+      where: {
+        OR: [
+          { restaurantId: { in: accessibleRestaurantIds } },
+          { restaurantId: null, isActive: true },
+        ],
+      },
       include: { restaurant: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
     })
@@ -18,8 +56,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser()
-    if (!user || (user.role !== "admin" && user.role !== "restaurant_owner")) {
-      return NextResponse.json({ error: "غير مصرح لك بإنشاء كود خصم" }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ error: "غير مصرح لك بإنشاء كود خصم" }, { status: 401 })
     }
 
     const body = await req.json()
@@ -27,6 +65,25 @@ export async function POST(req: Request) {
 
     if (!code || !discountValue) {
       return NextResponse.json({ error: "كود الخصم وقيمة الخصم مطلوبان" }, { status: 400 })
+    }
+
+    // Global coupon creation requires admin role
+    if (!restaurantId && user.role !== "admin") {
+      return NextResponse.json(
+        { error: "إنشاء كوبون عام لجميع المطاعم متاح فقط للمشرف (Admin)" },
+        { status: 403 }
+      )
+    }
+
+    // Restaurant-specific coupon creation requires owner access
+    if (restaurantId) {
+      const access = await getRestaurantAccess(user.id, restaurantId)
+      if (access !== "owner" && user.role !== "admin") {
+        return NextResponse.json(
+          { error: "غير مصرح لك بإنشاء كوبون لهذا المطعم" },
+          { status: 403 }
+        )
+      }
     }
 
     const existing = await prisma.coupon.findUnique({

@@ -16,9 +16,9 @@ export async function PATCH(
     const { id: restaurantId, staffId } = await params
 
     const access = await getRestaurantAccess(user.id, restaurantId)
-    if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+    if (access !== "owner" && user.role !== "admin") {
       return NextResponse.json(
-        { error: "غير مصرح لك بتعديل بيانات الموظفين. هذه العملية للمالك أو المدير فقط." },
+        { error: "غير مصرح لك بتعديل بيانات الموظفين. هذه العملية للمالك فقط." },
         { status: 403 }
       )
     }
@@ -82,9 +82,9 @@ export async function DELETE(
     const { id: restaurantId, staffId } = await params
 
     const access = await getRestaurantAccess(user.id, restaurantId)
-    if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+    if (access !== "owner" && user.role !== "admin") {
       return NextResponse.json(
-        { error: "غير مصرح لك بحذف الموظفين. هذه العملية للمالك أو المدير فقط." },
+        { error: "غير مصرح لك بحذف الموظفين. هذه العملية للمالك فقط." },
         { status: 403 }
       )
     }

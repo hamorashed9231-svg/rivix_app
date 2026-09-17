@@ -27,12 +27,12 @@ export async function getDefaultBranch(restaurantId: string) {
       data: {
         restaurantId,
         name: "الفرع الرئيسي",
-        address: "الفرع الرئيسي",
+        address: "الفرع الرئيسي - يرجى تحديد الموقع على الخريطة",
         phone: "0500000000",
-        lat: 24.7136,
-        lng: 46.6753,
+        lat: null,
+        lng: null,
         openingHours: { open: "10:00 AM", close: "12:00 AM" },
-        isActive: true,
+        isActive: false, // Inactive until location is set via map picker
       },
     })
   }
@@ -47,10 +47,11 @@ export async function getActiveBranches(restaurantId: string) {
     where: {
       restaurantId,
       isActive: true,
+      lat: { not: null },
+      lng: { not: null },
     },
     orderBy: {
       id: "asc",
     },
   })
 }
-

@@ -96,17 +96,26 @@ export async function getRestaurantAccess(
 ): Promise<RestaurantAccessLevel> {
   if (!userId || !restaurantId) return null
 
-  // 1. Check if user is restaurant owner
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: restaurantId },
-    select: { ownerId: true },
-  })
+  const [user, restaurant] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    }),
+    prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { ownerId: true },
+    }),
+  ])
+
+  if (user?.role === "admin" || user?.role === "restaurant_admin") {
+    return "owner"
+  }
 
   if (restaurant && restaurant.ownerId === userId) {
     return "owner"
   }
 
-  // 2. Check if user is active staff member
+  // Check if user is active staff member
   const staffRecord = await prisma.restaurantStaff.findUnique({
     where: {
       restaurantId_userId: {
