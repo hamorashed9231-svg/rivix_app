@@ -1,4 +1,4 @@
-import { BranchDeliverySettings, DeliveryCoverageResult } from '../types/index.js';
+import { BranchDeliverySettings, DeliveryCoverageResult } from '../types/index';
 
 export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   if (lat1 === lat2 && lon1 === lon2) return 0;

@@ -28,3 +28,4 @@ scripts/backups/
 .DS_Store
 *.pem
 *.tsbuildinfo
+.vercel

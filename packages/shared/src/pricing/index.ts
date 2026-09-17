@@ -1,2 +1,2 @@
-export * from './delivery.js';
-export * from './coupons.js';
+export * from './delivery';
+export * from './coupons';

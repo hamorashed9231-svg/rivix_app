@@ -1,4 +1,4 @@
-import { CouponData, CouponValidationResult } from '../types/index.js';
+import { CouponData, CouponValidationResult } from '../types/index';
 
 export function calculateCouponDiscount(
   coupon: CouponData,
