@@ -60,6 +60,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://restaurant-platform-ecru.vercel.app',
       restaurantSlug: slug,
       appName: appName,
+      eas: {
+        projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '9fa21e7c-d00e-46b4-ac63-459b9f763647',
+      },
     },
   };
 };
