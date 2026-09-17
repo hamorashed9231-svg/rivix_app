@@ -2,8 +2,12 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://rivix.vercel.app';
+const API_BASE_URL =
+  Constants.expoConfig?.extra?.apiBaseUrl ||
+  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  'https://restaurant-platform-ecru.vercel.app';
 
 export const TOKEN_KEY = 'auth_token';
 

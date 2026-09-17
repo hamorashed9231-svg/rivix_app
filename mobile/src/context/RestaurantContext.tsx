@@ -26,8 +26,13 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const data = await getRestaurantData();
       setRestaurant(data);
     } catch (err: any) {
-      console.error('Failed to fetch restaurant data:', err);
-      setError('تعذر الاتصال بالخادم');
+      const serverMessage = err.response?.data?.error || err.message;
+      console.error('[RestaurantContext] Failed to fetch restaurant data:', {
+        status: err.response?.status,
+        serverMessage,
+        url: err.config?.url,
+      });
+      setError(serverMessage || 'تعذر الاتصال بالخادم');
     } finally {
       setLoading(false);
     }
