@@ -17,7 +17,7 @@ import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { fetchUserAddresses, UserAddress } from '@/services/user';
 import { createCustomerOrder } from '@/services/orders';
-import { calculateDeliveryForCustomer, isInvalidLocation } from '@rivix/shared';
+import { calculateDeliveryForCustomer, isInvalidLocation } from '@/services/delivery';
 
 export default function CheckoutScreen() {
   const router = useRouter();
