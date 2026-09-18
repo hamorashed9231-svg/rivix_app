@@ -1,12 +1,30 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
+import fs from 'fs';
+import path from 'path';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const slug = process.env.EXPO_PUBLIC_RESTAURANT_SLUG || 'am-eissa';
   const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const appName = process.env.EXPO_PUBLIC_APP_NAME || 'عم عيسى';
+  const rawAppName = process.env.EXPO_PUBLIC_APP_NAME || 'عم عيسى';
+  
+  // Ensure "مطعم" prefix/suffix is removed for exact display name
+  const appName = rawAppName.replace(/^مطعم\s+/, '').replace(/\s+مطعم$/, '').trim();
+
   const androidPackage = process.env.EXPO_PUBLIC_ANDROID_PACKAGE || `com.rivix.${cleanSlug || 'ameissa'}`;
   const iosBundleId = process.env.EXPO_PUBLIC_IOS_BUNDLE_ID || `com.rivix.${cleanSlug || 'ameissa'}`;
   const scheme = process.env.EXPO_PUBLIC_SCHEME || `rivix${cleanSlug || 'ameissa'}`;
+
+  // Dynamic per-restaurant icon resolution logic
+  const projectRoot = __dirname;
+  const restaurantIconPng = `./assets/restaurants/${slug}/icon.png`;
+  const restaurantIconJpg = `./assets/restaurants/${slug}/icon.jpg`;
+
+  let selectedIcon = './assets/images/logo.jpg';
+  if (fs.existsSync(path.join(projectRoot, restaurantIconPng))) {
+    selectedIcon = restaurantIconPng;
+  } else if (fs.existsSync(path.join(projectRoot, restaurantIconJpg))) {
+    selectedIcon = restaurantIconJpg;
+  }
 
   return {
     ...config,
@@ -14,11 +32,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     slug: slug,
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/images/logo.jpg',
+    icon: selectedIcon,
     scheme: scheme,
     userInterfaceStyle: 'automatic',
     splash: {
-      image: './assets/images/logo.jpg',
+      image: selectedIcon,
       resizeMode: 'contain',
       backgroundColor: '#ffffff',
     },
@@ -27,13 +45,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       bundleIdentifier: iosBundleId,
       infoPlist: {
         NSLocationWhenInUseUsageDescription:
-          'نحتاج موقعك لتحديد عنوان التوصيل بدقة وحساب المسافة من أقرب فرع لمطعم عم عيسى',
+          `نحتاج موقعك لتحديد عنوان التوصيل بدقة وحساب المسافة من أقرب فرع لمطعم ${appName}`,
       },
     },
     android: {
       package: androidPackage,
       adaptiveIcon: {
-        foregroundImage: './assets/images/logo.jpg',
+        foregroundImage: selectedIcon,
         backgroundColor: '#ffffff',
       },
       permissions: [
@@ -45,7 +63,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     web: {
       bundler: 'metro',
       output: 'static',
-      favicon: './assets/images/logo.jpg',
+      favicon: selectedIcon,
     },
     plugins: [
       'expo-router',
@@ -53,7 +71,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         'expo-notifications',
         {
-          icon: './assets/images/logo.jpg',
+          icon: selectedIcon,
           color: '#f37f20',
         },
       ],
