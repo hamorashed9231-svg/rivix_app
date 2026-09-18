@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRestaurant } from '@/context/RestaurantContext';
 import { useCart } from '@/context/CartContext';
@@ -18,11 +19,22 @@ import { useLanguage } from '@/context/LanguageContext';
 import { fetchUserAddresses, UserAddress } from '@/services/user';
 import { createCustomerOrder } from '@/services/orders';
 import { calculateDeliveryForCustomer, isInvalidLocation } from '@/services/delivery';
+import { validateCouponCode } from '@/services/coupon';
 
 export default function CheckoutScreen() {
   const router = useRouter();
   const { restaurant, branches, primaryColor } = useRestaurant();
-  const { items, getTotal, getItemCount, clearCart } = useCart();
+  const {
+    items,
+    getTotal,
+    getItemCount,
+    clearCart,
+    appliedCoupon,
+    discountAmount,
+    couponCode,
+    applyCoupon,
+    removeCoupon,
+  } = useCart();
   const { t, language, isRTL } = useLanguage();
 
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'vodafone' | 'instapay'>('cash');
@@ -32,11 +44,15 @@ export default function CheckoutScreen() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
-  // Coupon states
-  const [couponInput, setCouponInput] = useState<string>('');
-  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
-  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  // Coupon state
+  const [couponInput, setCouponInput] = useState<string>(couponCode || '');
   const [validatingCoupon, setValidatingCoupon] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (couponCode) {
+      setCouponInput(couponCode);
+    }
+  }, [couponCode]);
 
   const subtotal = getTotal();
   const count = getItemCount();
@@ -51,38 +67,30 @@ export default function CheckoutScreen() {
     }
 
     setValidatingCoupon(true);
-    try {
-      const response = await api.post('/api/coupons/validate', {
-        code: couponInput.trim(),
-        subtotal,
-        restaurantId: restaurant?.id,
-        cartItems: items,
-      });
+    const result = await validateCouponCode(
+      couponInput,
+      subtotal,
+      restaurant?.id,
+      items
+    );
+    setValidatingCoupon(false);
 
-      setValidatingCoupon(false);
-      if (response.data?.valid) {
-        setAppliedCoupon(response.data.coupon);
-        setDiscountAmount(response.data.coupon.discountAmount || 0);
-        Alert.alert(
-          language === 'ar' ? 'تم تطبيق الخصم' : 'Coupon Applied',
-          response.data.message || (language === 'ar' ? 'تم تطبيق الخصم بنجاح' : 'Coupon applied successfully!')
-        );
-      } else {
-        Alert.alert(
-          language === 'ar' ? 'كود غير صالح' : 'Invalid Coupon',
-          response.data?.error || (language === 'ar' ? 'كود الخصم غير صالح' : 'Coupon code is invalid')
-        );
-      }
-    } catch (err: any) {
-      setValidatingCoupon(false);
-      const msg = err.response?.data?.error || (language === 'ar' ? 'كود الخصم غير صالح أو ملغى' : 'Invalid coupon');
-      Alert.alert(language === 'ar' ? 'خطأ' : 'Error', msg);
+    if (result.valid && result.coupon) {
+      applyCoupon(result.coupon, result.coupon.discountAmount || 0, couponInput.trim());
+      Alert.alert(
+        language === 'ar' ? 'تم تطبيق الخصم' : 'Coupon Applied',
+        result.message || (language === 'ar' ? 'تم تطبيق الخصم بنجاح' : 'Coupon applied successfully!')
+      );
+    } else {
+      Alert.alert(
+        language === 'ar' ? 'كود غير صالح' : 'Invalid Coupon',
+        result.error || (language === 'ar' ? 'كود الخصم غير صالح' : 'Coupon code is invalid')
+      );
     }
   };
 
   const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setDiscountAmount(0);
+    removeCoupon();
     setCouponInput('');
   };
 

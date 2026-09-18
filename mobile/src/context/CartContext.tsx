@@ -10,6 +10,8 @@ import {
   calculateCartItemCount,
 } from './cart-helpers';
 
+import { AppliedCouponData } from '@/services/coupon';
+
 export type { CartItem };
 
 interface CartContextType {
@@ -22,9 +24,17 @@ interface CartContextType {
   getItemCount: () => number;
   getItemQuantity: (menuItemId: string) => number;
   isLoading: boolean;
+
+  // Coupon state
+  appliedCoupon: AppliedCouponData | null;
+  discountAmount: number;
+  couponCode: string;
+  applyCoupon: (coupon: AppliedCouponData, amount: number, code: string) => void;
+  removeCoupon: () => void;
 }
 
 const STORAGE_KEY = '@mobile_cart_items_v1';
+const COUPON_STORAGE_KEY = '@mobile_cart_coupon_v1';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -32,7 +42,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load stored cart on mount
+  // Coupon state
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCouponData | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [couponCode, setCouponCode] = useState<string>('');
+
+  // Load stored cart & coupon on mount
   useEffect(() => {
     (async () => {
       try {
@@ -43,8 +58,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setItems(parsed);
           }
         }
+
+        const storedCoupon = await AsyncStorage.getItem(COUPON_STORAGE_KEY);
+        if (storedCoupon) {
+          const parsedCoupon = JSON.parse(storedCoupon);
+          if (parsedCoupon && parsedCoupon.coupon) {
+            setAppliedCoupon(parsedCoupon.coupon);
+            setDiscountAmount(parsedCoupon.discountAmount || 0);
+            setCouponCode(parsedCoupon.couponCode || '');
+          }
+        }
       } catch (error) {
-        console.error('Failed to load cart from AsyncStorage:', error);
+        console.error('Failed to load cart/coupon from AsyncStorage:', error);
       } finally {
         setIsLoading(false);
       }
@@ -58,6 +83,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Failed to save cart to AsyncStorage:', error);
     }
+  }, []);
+
+  const applyCoupon = useCallback((coupon: AppliedCouponData, amount: number, code: string) => {
+    setAppliedCoupon(coupon);
+    setDiscountAmount(amount);
+    setCouponCode(code);
+    AsyncStorage.setItem(
+      COUPON_STORAGE_KEY,
+      JSON.stringify({ coupon, discountAmount: amount, couponCode: code })
+    ).catch((err) => console.error('Failed to persist coupon:', err));
+  }, []);
+
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponCode('');
+    AsyncStorage.removeItem(COUPON_STORAGE_KEY).catch((err) =>
+      console.error('Failed to clear coupon storage:', err)
+    );
   }, []);
 
   const addItem = useCallback(
@@ -95,8 +139,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCart = useCallback(async () => {
     setItems([]);
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponCode('');
     try {
       await AsyncStorage.removeItem(STORAGE_KEY);
+      await AsyncStorage.removeItem(COUPON_STORAGE_KEY);
     } catch (error) {
       console.error('Failed to clear cart storage:', error);
     }
@@ -130,6 +178,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getItemCount,
         getItemQuantity,
         isLoading,
+        appliedCoupon,
+        discountAmount,
+        couponCode,
+        applyCoupon,
+        removeCoupon,
       }}
     >
       {children}

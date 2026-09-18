@@ -6,9 +6,12 @@ export interface MenuItem {
   name: string;
   description?: string;
   price: number;
+  originalPrice?: number;
   image?: string;
   category?: string;
+  categoryId?: string;
   isAvailable?: boolean;
+  optionGroups?: any[];
 }
 
 export interface MenuCategory {
