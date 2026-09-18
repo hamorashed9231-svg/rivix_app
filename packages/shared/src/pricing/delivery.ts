@@ -61,11 +61,29 @@ export function calculateDeliveryFee(
   return Math.round((base + distanceKm * perKm) * 100) / 100;
 }
 
+export function isInvalidLocation(lat?: number | null, lng?: number | null): boolean {
+  if (lat == null || lng == null) return true;
+  if (lat === 0 && lng === 0) return true;
+  if (Math.abs(lat - 30.0444) < 0.0001 && Math.abs(lng - 31.2357) < 0.0001) return true;
+  if (Math.abs(lat - 24.7136) < 0.0001 && Math.abs(lng - 46.6753) < 0.0001) return true;
+  return false;
+}
+
 export function calculateDeliveryForCustomer(
   customerLat: number,
   customerLng: number,
   branches: BranchDeliverySettings[]
 ): DeliveryCoverageResult {
+  if (isInvalidLocation(customerLat, customerLng)) {
+    return {
+      isWithinRadius: false,
+      distanceKm: 0,
+      deliveryFee: 0,
+      maxRadiusKm: 0,
+      reason: "من فضلك حدد موقعك على الخريطة لحساب رسوم التوصيل",
+    };
+  }
+
   const activeBranches = branches.filter((b) => b.isActive !== false && b.deliveryEnabled !== false);
 
   if (activeBranches.length === 0) {

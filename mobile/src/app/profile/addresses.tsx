@@ -27,23 +27,17 @@ export default function SavedAddressesScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
 
-  // Form states
-  const [label, setLabel] = useState<string>('');
-  const [details, setDetails] = useState<string>('');
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
-  const [locating, setLocating] = useState<boolean>(false);
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [showManualInput, setShowManualInput] = useState<boolean>(false);
+  const [manualLatStr, setManualLatStr] = useState<string>('');
+  const [manualLngStr, setManualLngStr] = useState<string>('');
 
-  const loadAddresses = async () => {
-    const list = await fetchUserAddresses();
-    setAddresses(list);
-    setLoading(false);
+  const isInvalid = (l: number | null, lg: number | null) => {
+    if (!l || !lg) return true;
+    if (l === 0 && lg === 0) return true;
+    if (Math.abs(l - 30.0444) < 0.0001 && Math.abs(lg - 31.2357) < 0.0001) return true;
+    if (Math.abs(l - 24.7136) < 0.0001 && Math.abs(lg - 46.6753) < 0.0001) return true;
+    return false;
   };
-
-  useEffect(() => {
-    loadAddresses();
-  }, []);
 
   const handleFetchCurrentGPS = async () => {
     setLocating(true);
@@ -53,16 +47,41 @@ export default function SavedAddressesScreen() {
     if (coords) {
       setLat(coords.latitude);
       setLng(coords.longitude);
+      setManualLatStr(coords.latitude.toString());
+      setManualLngStr(coords.longitude.toString());
       Alert.alert(
         language === 'ar' ? 'تم تحديد الموقع' : 'Location Found',
         `${language === 'ar' ? 'الإحداثيات: ' : 'Coords: '} ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`
       );
     } else {
+      setShowManualInput(true);
       Alert.alert(
-        language === 'ar' ? 'تنبيه' : 'Warning',
-        language === 'ar' ? 'لم نتمكن من التقاط موقعك الجغرافي' : 'Could not fetch current GPS location.'
+        language === 'ar' ? 'تنبيه الـ GPS' : 'GPS Warning',
+        language === 'ar'
+          ? 'لم نتمكن من الوصول للـ GPS. يمكنك إدخال إحداثيات موقعك على الخريطة يدويًا.'
+          : 'GPS position unavailable. You can enter manual coordinates below.'
       );
     }
+  };
+
+  const handleApplyManualCoords = () => {
+    const parsedLat = parseFloat(manualLatStr);
+    const parsedLng = parseFloat(manualLngStr);
+
+    if (isNaN(parsedLat) || isNaN(parsedLng) || isInvalid(parsedLat, parsedLng)) {
+      Alert.alert(
+        language === 'ar' ? 'خطأ' : 'Error',
+        language === 'ar' ? 'يرجى إدخال خط عرض وطول صحيحين لموقعك' : 'Please enter valid latitude and longitude.'
+      );
+      return;
+    }
+
+    setLat(parsedLat);
+    setLng(parsedLng);
+    Alert.alert(
+      language === 'ar' ? 'تم الحفظ اليدوي' : 'Coords Set',
+      `${language === 'ar' ? 'تم اختيار الإحداثيات: ' : 'Set coords: '} ${parsedLat.toFixed(4)}, ${parsedLng.toFixed(4)}`
+    );
   };
 
   const handleSaveAddress = async () => {
@@ -74,12 +93,22 @@ export default function SavedAddressesScreen() {
       return;
     }
 
+    if (isInvalid(lat, lng)) {
+      Alert.alert(
+        language === 'ar' ? 'مطلوب تحديد الموقع' : 'Location Required',
+        language === 'ar'
+          ? 'من فضلك حدد موقعك على الخريطة لحساب رسوم التوصيل'
+          : 'Please select your exact location on the map to calculate delivery fees.'
+      );
+      return;
+    }
+
     setSubmitting(true);
     const result = await addUserAddress({
       label,
       details,
-      lat: lat || 30.0444,
-      lng: lng || 31.2357,
+      lat: lat!,
+      lng: lng!,
     });
 
     setSubmitting(false);
@@ -93,6 +122,8 @@ export default function SavedAddressesScreen() {
       setDetails('');
       setLat(null);
       setLng(null);
+      setManualLatStr('');
+      setManualLngStr('');
       setShowAddForm(false);
       loadAddresses();
     } else {
@@ -103,20 +134,25 @@ export default function SavedAddressesScreen() {
     }
   };
 
-  const renderAddressCard = ({ item }: { item: UserAddress }) => (
-    <View style={[styles.card, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-      <View style={styles.iconCircle}>
-        <Text style={styles.iconText}>📍</Text>
+  const renderAddressCard = ({ item }: { item: UserAddress }) => {
+    const hasInvalidCoords = isInvalid(item.lat, item.lng);
+    return (
+      <View style={[styles.card, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.iconCircle, hasInvalidCoords && { backgroundColor: '#FEE2E2' }]}>
+          <Text style={styles.iconText}>{hasInvalidCoords ? '⚠️' : '📍'}</Text>
+        </View>
+        <View style={styles.addressInfo}>
+          <Text style={[styles.addressLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{item.label}</Text>
+          <Text style={[styles.addressDetails, { textAlign: isRTL ? 'right' : 'left' }]}>{item.details}</Text>
+          <Text style={[styles.addressCoords, { textAlign: isRTL ? 'right' : 'left' }, hasInvalidCoords && { color: '#EF4444', fontWeight: 'bold' }]}>
+            {hasInvalidCoords
+              ? (language === 'ar' ? '⚠️ يتطلب تحديد الموقع على الخريطة' : '⚠️ Requires map location')
+              : `GPS: ${item.lat.toFixed(4)}, ${item.lng.toFixed(4)}`}
+          </Text>
+        </View>
       </View>
-      <View style={styles.addressInfo}>
-        <Text style={[styles.addressLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{item.label}</Text>
-        <Text style={[styles.addressDetails, { textAlign: isRTL ? 'right' : 'left' }]}>{item.details}</Text>
-        <Text style={[styles.addressCoords, { textAlign: isRTL ? 'right' : 'left' }]}>
-          GPS: {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
-        </Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,27 +9,113 @@ import {
   ScrollView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRestaurant } from '@/context/RestaurantContext';
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { fetchUserAddresses, UserAddress } from '@/services/user';
+import { createCustomerOrder } from '@/services/orders';
+import { calculateDeliveryForCustomer, isInvalidLocation } from '@rivix/shared';
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { primaryColor } = useRestaurant();
-  const { getTotal, getItemCount, clearCart } = useCart();
-  const { t, isRTL } = useLanguage();
+  const { restaurant, branches, primaryColor } = useRestaurant();
+  const { items, getTotal, getItemCount, clearCart } = useCart();
+  const { t, language, isRTL } = useLanguage();
 
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'vodafone' | 'instapay'>('cash');
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
+  const [loadingAddresses, setLoadingAddresses] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
-  const total = getTotal();
+  const subtotal = getTotal();
   const count = getItemCount();
 
-  const handlePlaceOrder = () => {
-    setIsSubmitted(true);
-    clearCart();
+  useEffect(() => {
+    async function loadData() {
+      setLoadingAddresses(true);
+      const list = await fetchUserAddresses();
+      setAddresses(list);
+      if (list.length > 0) {
+        setSelectedAddress(list[0]);
+      }
+      setLoadingAddresses(false);
+    }
+    loadData();
+  }, []);
+
+  // Calculate delivery fee dynamically based on selected address & active branch
+  const isAddressInvalid = !selectedAddress || isInvalidLocation(selectedAddress.lat, selectedAddress.lng);
+  
+  const deliveryResult = (!isAddressInvalid && selectedAddress && branches.length > 0)
+    ? calculateDeliveryForCustomer(selectedAddress.lat, selectedAddress.lng, branches)
+    : null;
+
+  const deliveryFee = deliveryResult?.isWithinRadius ? deliveryResult.deliveryFee : 0;
+  const isDeliverable = deliveryResult?.isWithinRadius ?? false;
+  const finalTotal = subtotal + deliveryFee;
+
+  const handlePlaceOrder = async () => {
+    if (!selectedAddress || isAddressInvalid) {
+      Alert.alert(
+        language === 'ar' ? 'تحديد الموقع مطلوب' : 'Location Required',
+        language === 'ar'
+          ? 'من فضلك حدد موقعك على الخريطة لحساب رسوم التوصيل'
+          : 'Please pick your location on the map to calculate delivery fees.',
+        [
+          {
+            text: language === 'ar' ? 'تحديد الموقع الآن' : 'Set Location Now',
+            onPress: () => router.push('/profile/addresses'),
+          },
+          { text: language === 'ar' ? 'إلغاء' : 'Cancel', style: 'cancel' }
+        ]
+      );
+      return;
+    }
+
+    if (!isDeliverable) {
+      Alert.alert(
+        language === 'ar' ? 'خارج نطاق التوصيل' : 'Out of Delivery Range',
+        deliveryResult?.reason || (language === 'ar' ? 'عذراً، موقعك يقع خارج نطاق التوصيل المتاح' : 'Address outside delivery zone')
+      );
+      return;
+    }
+
+    setSubmitting(true);
+    const orderItems = items.map((item) => ({
+      id: item.id,
+      menuItemId: item.id,
+      quantity: item.quantity,
+      price: item.price,
+      notes: item.notes,
+    }));
+
+    const response = await createCustomerOrder({
+      restaurantId: restaurant?.id || '',
+      items: orderItems,
+      totalPrice: finalTotal,
+      deliveryAddressId: selectedAddress.id,
+      deliveryAddressDetails: selectedAddress.details,
+      customerLat: selectedAddress.lat,
+      customerLng: selectedAddress.lng,
+      paymentMethod,
+    });
+
+    setSubmitting(false);
+
+    if (response.success) {
+      setIsSubmitted(true);
+      clearCart();
+    } else {
+      Alert.alert(
+        language === 'ar' ? 'خطأ في الطلب' : 'Order Error',
+        response.error || (language === 'ar' ? 'حدث خطأ أثناء إرسال الطلب' : 'Failed to place order')
+      );
+    }
   };
 
   if (isSubmitted) {
@@ -70,14 +156,68 @@ export default function CheckoutScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Delivery Address Section */}
         <View style={styles.sectionCard}>
-          <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
-            📍 {t('deliveryAddress')}
-          </Text>
-          <View style={styles.addressBox}>
-            <Text style={[styles.addressText, { textAlign: isRTL ? 'right' : 'left' }]}>
-              {isRTL ? 'العنوان الرئيسي (المنزل - الإسكندرية)' : 'Main Address (Home - Alexandria)'}
-            </Text>
+          <View style={[styles.sectionHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Text style={styles.sectionTitle}>📍 {t('deliveryAddress')}</Text>
+            <TouchableOpacity onPress={() => router.push('/profile/addresses')}>
+              <Text style={[styles.changeAddrText, { color: primaryColor }]}>
+                {language === 'ar' ? '+ تغيير / إضافة' : '+ Change / Add'}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {loadingAddresses ? (
+            <ActivityIndicator color={primaryColor} />
+          ) : addresses.length === 0 ? (
+            <TouchableOpacity
+              style={styles.warningBox}
+              onPress={() => router.push('/profile/addresses')}
+            >
+              <Text style={styles.warningBoxText}>
+                ⚠️ {language === 'ar' ? 'لا يوجد عنوان محفوظ. اضغط هنا لإضافة عنوانك وموقعك على الخريطة' : 'No saved address. Tap here to add your location.'}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.addressListScroll}>
+              {addresses.map((addr) => {
+                const isSelected = selectedAddress?.id === addr.id;
+                const isInvalid = isInvalidLocation(addr.lat, addr.lng);
+                return (
+                  <TouchableOpacity
+                    key={addr.id}
+                    style={[
+                      styles.addressCardChip,
+                      isSelected && { borderColor: primaryColor, backgroundColor: '#F0F9FF' },
+                      isInvalid && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }
+                    ]}
+                    onPress={() => setSelectedAddress(addr)}
+                  >
+                    <Text style={styles.addressChipLabel}>
+                      {addr.label} {isInvalid ? '⚠️' : '📍'}
+                    </Text>
+                    <Text style={styles.addressChipDetails} numberOfLines={2}>
+                      {addr.details}
+                    </Text>
+                    {isInvalid && (
+                      <Text style={styles.invalidBadgeText}>
+                        {language === 'ar' ? 'يتطلب تحديد الموقع' : 'Requires map location'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+
+          {isAddressInvalid && (
+            <TouchableOpacity
+              style={styles.invalidAlertBanner}
+              onPress={() => router.push('/profile/addresses')}
+            >
+              <Text style={styles.invalidAlertText}>
+                ⚠️ {language === 'ar' ? 'من فضلك حدد موقعك على الخريطة لحساب رسوم التوصيل' : 'Please pick your location on the map to calculate delivery fees'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Payment Method Section */}
@@ -135,16 +275,27 @@ export default function CheckoutScreen() {
           </View>
 
           <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={styles.summaryLabel}>{t('deliveryFee')}:</Text>
-            <Text style={[styles.summaryValue, { color: '#10B981' }]}>{t('freeDelivery')}</Text>
+            <Text style={styles.summaryLabel}>{t('subtotal') || 'المجموع الفرعي'}:</Text>
+            <Text style={styles.summaryValue}>{subtotal} {t('currency')}</Text>
           </View>
 
-          <View style={[styles.divider]} />
+          <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Text style={styles.summaryLabel}>{t('deliveryFee')}:</Text>
+            <Text style={[styles.summaryValue, { color: isAddressInvalid ? '#EF4444' : primaryColor }]}>
+              {isAddressInvalid
+                ? (language === 'ar' ? 'مطلوب تحديد الموقع' : 'Location required')
+                : isDeliverable
+                ? `${deliveryFee} ${t('currency')}`
+                : (language === 'ar' ? 'خارج نطاق التوصيل' : 'Out of range')}
+            </Text>
+          </View>
+
+          <View style={styles.divider} />
 
           <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Text style={styles.totalLabel}>{t('total')}:</Text>
             <Text style={[styles.totalValue, { color: primaryColor }]}>
-              {total} {t('currency')}
+              {finalTotal} {t('currency')}
             </Text>
           </View>
         </View>
@@ -153,11 +304,19 @@ export default function CheckoutScreen() {
       {/* Confirm Button */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.confirmButton, { backgroundColor: primaryColor }]}
+          style={[
+            styles.confirmButton,
+            { backgroundColor: (isAddressInvalid || !isDeliverable) ? '#94A3B8' : primaryColor }
+          ]}
           onPress={handlePlaceOrder}
+          disabled={submitting}
           activeOpacity={0.85}
         >
-          <Text style={styles.confirmButtonText}>{t('confirmOrder')}</Text>
+          {submitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.confirmButtonText}>{t('confirmOrder')}</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -201,19 +360,72 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
+  sectionHeaderRow: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#1E293B',
   },
-  addressBox: {
-    backgroundColor: '#F1F5F9',
-    padding: 12,
-    borderRadius: 10,
+  changeAddrText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
-  addressText: {
+  addressListScroll: {
+    gap: 10,
+    paddingVertical: 4,
+  },
+  addressCardChip: {
+    width: 200,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    gap: 4,
+  },
+  addressChipLabel: {
     fontSize: 14,
-    color: '#334155',
+    fontWeight: 'bold',
+    color: '#0F172A',
+  },
+  addressChipDetails: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  invalidBadgeText: {
+    fontSize: 11,
+    color: '#EF4444',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  warningBox: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+  },
+  warningBoxText: {
+    fontSize: 13,
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  invalidAlertBanner: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 6,
+  },
+  invalidAlertText: {
+    fontSize: 13,
+    color: '#B91C1C',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   paymentOption: {
     alignItems: 'center',

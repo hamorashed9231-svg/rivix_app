@@ -71,3 +71,24 @@ export const submitOrderReview = async (payload: {
     return false;
   }
 };
+
+// Create a new customer order
+export const createCustomerOrder = async (orderData: {
+  restaurantId: string;
+  items: Array<{ id: string; menuItemId?: string; quantity: number; price: number; notes?: string }>;
+  totalPrice: number;
+  deliveryAddressId?: string;
+  deliveryAddressDetails?: string;
+  customerLat?: number;
+  customerLng?: number;
+  paymentMethod?: string;
+}): Promise<{ success: boolean; order?: OrderDetails; error?: string }> => {
+  try {
+    const response = await api.post('/api/customer/orders', orderData);
+    return { success: true, order: response.data.order };
+  } catch (error: any) {
+    const errorMsg = error.response?.data?.error || error.response?.data?.message || 'حدث خطأ أثناء إرسال الطلب';
+    return { success: false, error: errorMsg };
+  }
+};
+

@@ -3,6 +3,7 @@ export {
   calculateDeliveryForCustomer,
   findNearestDeliverableBranch,
   calculateDeliveryFee,
+  isInvalidLocation,
 } from '@rivix/shared';
 
 export type {
