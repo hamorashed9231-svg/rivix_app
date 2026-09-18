@@ -8,7 +8,7 @@ const LANGUAGE_KEY = 'user_selected_language';
 const translations = {
   ar: {
     // Header & Global
-    appName: 'تطبيق المطعم',
+    appName: 'عم عيسى',
     searchPlaceholder: 'ابحث عن صنف أو وجبة...',
     currency: 'ج.م',
     languageToggle: '🇬🇧 EN',
@@ -78,7 +78,7 @@ const translations = {
   },
   en: {
     // Header & Global
-    appName: 'Restaurant App',
+    appName: 'Am Eissa',
     searchPlaceholder: 'Search for a dish or meal...',
     currency: 'EGP',
     languageToggle: '🇸🇦 عربى',

@@ -17,6 +17,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon: './assets/images/logo.jpg',
     scheme: scheme,
     userInterfaceStyle: 'automatic',
+    splash: {
+      image: './assets/images/logo.jpg',
+      resizeMode: 'contain',
+      backgroundColor: '#ffffff',
+    },
     ios: {
       supportsTablet: true,
       bundleIdentifier: iosBundleId,

@@ -23,6 +23,11 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
     return null;
   }
 
+  if (Constants.appOwnership === 'expo' || Constants.executionEnvironment === 'storeClient') {
+    console.warn('Push notifications are not supported in Expo Go. Skipping token registration.');
+    return null;
+  }
+
   try {
     // Configure default Android notification channel
     if (Platform.OS === 'android') {
@@ -58,7 +63,7 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
     console.log('Expo Push Token obtained:', tokenData.data);
     return tokenData.data;
   } catch (error) {
-    console.error('Error registering for push notifications:', error);
+    console.warn('Push notification registration skipped:', error);
     return null;
   }
 };
