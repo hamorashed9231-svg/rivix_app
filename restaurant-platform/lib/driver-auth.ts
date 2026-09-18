@@ -105,3 +105,25 @@ export async function verifyControlToken(req: Request) {
   }
 }
 
+/**
+ * Verifies mobile customer or driver token.
+ */
+export async function verifyMobileToken(req: Request) {
+  const authHeader = req.headers.get("authorization") || req.headers.get("Authorization")
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null
+  }
+
+  const tokenStr = authHeader.substring(7).trim()
+  if (!tokenStr) return null
+
+  try {
+    const { payload } = await jwtVerify(tokenStr, encodedSecret)
+    if (!payload) return null
+    return payload
+  } catch (error) {
+    return null
+  }
+}
+
+
