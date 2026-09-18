@@ -3,7 +3,7 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 export default ({ config }: ConfigContext): ExpoConfig => {
   const slug = process.env.EXPO_PUBLIC_RESTAURANT_SLUG || 'am-eissa';
   const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const appName = process.env.EXPO_PUBLIC_APP_NAME || 'مطعم عم عيسى';
+  const appName = process.env.EXPO_PUBLIC_APP_NAME || 'عم عيسى';
   const androidPackage = process.env.EXPO_PUBLIC_ANDROID_PACKAGE || `com.rivix.${cleanSlug || 'ameissa'}`;
   const iosBundleId = process.env.EXPO_PUBLIC_IOS_BUNDLE_ID || `com.rivix.${cleanSlug || 'ameissa'}`;
   const scheme = process.env.EXPO_PUBLIC_SCHEME || `rivix${cleanSlug || 'ameissa'}`;
@@ -14,7 +14,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     slug: slug,
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/images/icon.png',
+    icon: './assets/images/logo.jpg',
     scheme: scheme,
     userInterfaceStyle: 'automatic',
     ios: {
@@ -28,7 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     android: {
       package: androidPackage,
       adaptiveIcon: {
-        foregroundImage: './assets/images/adaptive-icon.png',
+        foregroundImage: './assets/images/logo.jpg',
         backgroundColor: '#ffffff',
       },
       permissions: [
@@ -40,7 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     web: {
       bundler: 'metro',
       output: 'static',
-      favicon: './assets/images/favicon.png',
+      favicon: './assets/images/logo.jpg',
     },
     plugins: [
       'expo-router',
@@ -48,7 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         'expo-notifications',
         {
-          icon: './assets/images/icon.png',
+          icon: './assets/images/logo.jpg',
           color: '#f37f20',
         },
       ],

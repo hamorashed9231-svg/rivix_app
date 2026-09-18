@@ -15,7 +15,7 @@ export interface TenantConfig {
  */
 export const TENANT_CONFIG: TenantConfig = {
   restaurantSlug: process.env.EXPO_PUBLIC_TENANT_SLUG || 'am-eissa',
-  appName: process.env.EXPO_PUBLIC_APP_NAME || 'مطعم عم عيسى',
+  appName: process.env.EXPO_PUBLIC_APP_NAME || 'عم عيسى',
   defaultPrimaryColor: '#2196F3',
   defaultSecondaryColor: '#0A1A3C',
   isMultiVendor: Boolean(process.env.EXPO_PUBLIC_TENANT_SLUG === 'multi-vendor'),
