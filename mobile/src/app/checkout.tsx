@@ -32,8 +32,59 @@ export default function CheckoutScreen() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
+  // Coupon states
+  const [couponInput, setCouponInput] = useState<string>('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [validatingCoupon, setValidatingCoupon] = useState<boolean>(false);
+
   const subtotal = getTotal();
   const count = getItemCount();
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) {
+      Alert.alert(
+        language === 'ar' ? 'تنبيه' : 'Validation',
+        language === 'ar' ? 'يرجى إدخال كود الخصم أولاً' : 'Please enter a coupon code.'
+      );
+      return;
+    }
+
+    setValidatingCoupon(true);
+    try {
+      const response = await api.post('/api/coupons/validate', {
+        code: couponInput.trim(),
+        subtotal,
+        restaurantId: restaurant?.id,
+        cartItems: items,
+      });
+
+      setValidatingCoupon(false);
+      if (response.data?.valid) {
+        setAppliedCoupon(response.data.coupon);
+        setDiscountAmount(response.data.coupon.discountAmount || 0);
+        Alert.alert(
+          language === 'ar' ? 'تم تطبيق الخصم' : 'Coupon Applied',
+          response.data.message || (language === 'ar' ? 'تم تطبيق الخصم بنجاح' : 'Coupon applied successfully!')
+        );
+      } else {
+        Alert.alert(
+          language === 'ar' ? 'كود غير صالح' : 'Invalid Coupon',
+          response.data?.error || (language === 'ar' ? 'كود الخصم غير صالح' : 'Coupon code is invalid')
+        );
+      }
+    } catch (err: any) {
+      setValidatingCoupon(false);
+      const msg = err.response?.data?.error || (language === 'ar' ? 'كود الخصم غير صالح أو ملغى' : 'Invalid coupon');
+      Alert.alert(language === 'ar' ? 'خطأ' : 'Error', msg);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponInput('');
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -57,7 +108,7 @@ export default function CheckoutScreen() {
 
   const deliveryFee = deliveryResult?.isWithinRadius ? deliveryResult.deliveryFee : 0;
   const isDeliverable = deliveryResult?.isWithinRadius ?? false;
-  const finalTotal = subtotal + deliveryFee;
+  const finalTotal = Math.max(0, subtotal - discountAmount) + deliveryFee;
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress || isAddressInvalid) {
@@ -103,6 +154,7 @@ export default function CheckoutScreen() {
       customerLat: selectedAddress.lat,
       customerLng: selectedAddress.lng,
       paymentMethod,
+      couponCode: appliedCoupon?.code,
     });
 
     setSubmitting(false);
@@ -263,6 +315,50 @@ export default function CheckoutScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Coupon Discount Section */}
+        <View style={styles.sectionCard}>
+          <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+            🏷️ {language === 'ar' ? 'كود الخصم / الكوبون' : 'Coupon Code'}
+          </Text>
+
+          {appliedCoupon ? (
+            <View style={[styles.appliedCouponRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.appliedCouponCode}>🎉 {appliedCoupon.code}</Text>
+                <Text style={styles.appliedCouponDiscount}>
+                  {language === 'ar' ? 'تم تطبيق خصم بقيمة:' : 'Discount:'} -{discountAmount} {t('currency')}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={handleRemoveCoupon} style={styles.removeCouponBtn}>
+                <Text style={styles.removeCouponText}>{language === 'ar' ? 'إزالة' : 'Remove'}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={[styles.couponInputRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <TextInput
+                style={[styles.couponInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                placeholder={language === 'ar' ? 'أدخل كود الخصم (مثال: RIVIX20)' : 'Enter coupon code (e.g. RIVIX20)'}
+                value={couponInput}
+                onChangeText={setCouponInput}
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity
+                style={[styles.applyCouponBtn, { backgroundColor: primaryColor }]}
+                onPress={handleApplyCoupon}
+                disabled={validatingCoupon}
+              >
+                {validatingCoupon ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.applyCouponBtnText}>
+                    {language === 'ar' ? 'تطبيق' : 'Apply'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
         {/* Order Summary Section */}
         <View style={styles.sectionCard}>
           <Text style={[styles.sectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
@@ -278,6 +374,17 @@ export default function CheckoutScreen() {
             <Text style={styles.summaryLabel}>{t('subtotal') || 'المجموع الفرعي'}:</Text>
             <Text style={styles.summaryValue}>{subtotal} {t('currency')}</Text>
           </View>
+
+          {discountAmount > 0 ? (
+            <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Text style={[styles.summaryLabel, { color: '#10B981', fontWeight: 'bold' }]}>
+                {language === 'ar' ? 'خصم الكوبون:' : 'Coupon Discount:'}
+              </Text>
+              <Text style={[styles.summaryValue, { color: '#10B981' }]}>
+                -{discountAmount} {t('currency')}
+              </Text>
+            </View>
+          ) : null}
 
           <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Text style={styles.summaryLabel}>{t('deliveryFee')}:</Text>
@@ -520,6 +627,62 @@ const styles = StyleSheet.create({
   homeButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  couponInputRow: {
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
+  },
+  couponInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#F8FAFC',
+  },
+  applyCouponBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  applyCouponBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  appliedCouponRow: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  appliedCouponCode: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#065F46',
+  },
+  appliedCouponDiscount: {
+    fontSize: 13,
+    color: '#047857',
+    marginTop: 2,
+  },
+  removeCouponBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#FEE2E2',
+    borderRadius: 8,
+  },
+  removeCouponText: {
+    color: '#EF4444',
+    fontSize: 12,
     fontWeight: 'bold',
   },
 });

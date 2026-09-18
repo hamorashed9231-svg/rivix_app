@@ -21,6 +21,8 @@ import { requestLocationPermission } from '@/services/location';
 import { registerForPushNotificationsAsync } from '@/services/notifications';
 import { TENANT_CONFIG } from '@/config/tenant';
 
+import { ItemDetailModal } from '@/components/ItemDetailModal';
+
 const FALLBACK_ITEM_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400';
 
 export default function HomeScreen() {
@@ -31,6 +33,7 @@ export default function HomeScreen() {
   const { t, isRTL, toggleLanguage, language } = useLanguage();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedItemForDetail, setSelectedItemForDetail] = useState<MenuItem | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -53,36 +56,26 @@ export default function HomeScreen() {
     if (restaurant?.menu && restaurant.menu.length > 0) {
       return restaurant.menu;
     }
-    return [
-      {
-        id: '1',
-        name: language === 'ar' ? 'برجر كلاسيك لحم' : 'Classic Beef Burger',
-        description: language === 'ar' ? 'شريحة لحم بقر مشوية مع جبنة شيدر، خس وطماطم' : 'Grilled beef patty with cheddar cheese, lettuce & tomato',
-        price: 120,
-        category: language === 'ar' ? 'البرجر' : 'Burgers',
-        isAvailable: true,
-        image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
-      },
-      {
-        id: '2',
-        name: language === 'ar' ? 'بطاطس مقلية بالجبنة' : 'Cheese Fries',
-        description: language === 'ar' ? 'بطاطس مقرمشة مغطاة بالجبنة الذائبة' : 'Crispy fries topped with melted cheese sauce',
-        price: 45,
-        category: language === 'ar' ? 'الأطباق الجانبية' : 'Sides',
-        isAvailable: true,
-        image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400',
-      },
-    ];
-  }, [restaurant?.menu, language]);
+    return [];
+  }, [restaurant?.menu]);
 
-  // Extract unique categories
-  const categories = useMemo(() => {
+  // Extract categories from API response categories array or rawItems
+  const categoryTabs = useMemo(() => {
+    if (restaurant?.categories && restaurant.categories.length > 0) {
+      return [
+        { id: 'ALL', name: language === 'ar' ? 'الكل' : 'All' },
+        ...restaurant.categories.map((c: any) => ({ id: c.name, name: c.name }))
+      ];
+    }
     const cats = new Set<string>();
     rawItems.forEach((item) => {
       if (item.category) cats.add(item.category);
     });
-    return ['ALL', ...Array.from(cats)];
-  }, [rawItems]);
+    return [
+      { id: 'ALL', name: language === 'ar' ? 'الكل' : 'All' },
+      ...Array.from(cats).map((name) => ({ id: name, name }))
+    ];
+  }, [restaurant?.categories, rawItems, language]);
 
   // Filter items by category
   const filteredItems = useMemo(() => {
@@ -98,7 +91,11 @@ export default function HomeScreen() {
     const currentQty = getItemQuantity(item.id);
 
     return (
-      <View style={[styles.card, !isAvailable && styles.disabledCard, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+      <TouchableOpacity
+        style={[styles.card, !isAvailable && styles.disabledCard, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+        onPress={() => isAvailable && setSelectedItemForDetail(item)}
+        activeOpacity={0.85}
+      >
         <Image
           source={{ uri: item.image || FALLBACK_ITEM_IMAGE }}
           style={styles.cardImage}
@@ -121,7 +118,10 @@ export default function HomeScreen() {
             {isAvailable ? (
               <TouchableOpacity
                 style={[styles.addButton, { backgroundColor: primaryColor }]}
-                onPress={() => addItem(item)}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  addItem(item);
+                }}
                 activeOpacity={0.8}
               >
                 <Text style={styles.addButtonText}>
@@ -139,7 +139,7 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : null}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -214,18 +214,17 @@ export default function HomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={[styles.tabsScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
         >
-          {categories.map((cat) => {
-            const isSelected = selectedCategory === cat;
-            const label = cat === 'ALL' ? t('allCategories') : cat;
+          {categoryTabs.map((cat) => {
+            const isSelected = selectedCategory === cat.id;
 
             return (
               <TouchableOpacity
-                key={cat}
+                key={cat.id}
                 style={[
                   styles.tab,
                   isSelected && { backgroundColor: primaryColor, borderColor: primaryColor },
                 ]}
-                onPress={() => setSelectedCategory(cat)}
+                onPress={() => setSelectedCategory(cat.id)}
                 activeOpacity={0.7}
               >
                 <Text
@@ -234,7 +233,7 @@ export default function HomeScreen() {
                     isSelected && styles.selectedTabText,
                   ]}
                 >
-                  {label}
+                  {cat.name}
                 </Text>
               </TouchableOpacity>
             );
@@ -283,6 +282,14 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       ) : null}
+
+      {/* Product Detail Modal */}
+      <ItemDetailModal
+        visible={!!selectedItemForDetail}
+        item={selectedItemForDetail}
+        primaryColor={primaryColor}
+        onClose={() => setSelectedItemForDetail(null)}
+      />
     </SafeAreaView>
   );
 }

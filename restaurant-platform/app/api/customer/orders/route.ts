@@ -4,12 +4,13 @@ import { prisma } from "@/lib/prisma"
 import { publishOrderEvent } from "@/lib/notifications-pubsub"
 import { checkBranchOpenStatus } from "@/lib/opening-hours"
 import { calculateDeliveryForCustomer, isInvalidLocation } from "@/lib/delivery-calculator"
+import { calculateCouponDiscount } from "@/lib/coupon-calculator"
 
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser()
     const body = await req.json()
-    const { restaurantId, items, totalPrice, deliveryAddressId, deliveryAddressDetails, customerLat, customerLng } = body
+    const { restaurantId, items, totalPrice, deliveryAddressId, deliveryAddressDetails, customerLat, customerLng, couponCode } = body
 
     if (!restaurantId || !items || items.length === 0 || !totalPrice) {
       return NextResponse.json(
@@ -92,8 +93,40 @@ export async function POST(req: Request) {
       )
     }
 
-    // 5. Create Order and OrderItems in DB
-    const finalTotalPrice = parseFloat(totalPrice) + deliveryCoverage.deliveryFee
+    // 5. Handle Coupon Discount Server-side
+    let verifiedCoupon = null
+    let discountAmount = 0
+
+    // Compute raw items subtotal on server
+    const rawSubtotal = items.reduce((sum: number, i: any) => sum + (parseFloat(i.price) * (i.quantity || 1)), 0)
+
+    if (couponCode && String(couponCode).trim()) {
+      const cleanCode = String(couponCode).trim().toUpperCase()
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: cleanCode },
+      })
+
+      if (!coupon || !coupon.isActive) {
+        return NextResponse.json(
+          { error: "كود الخصم المدخل غير صالح أو ملغى" },
+          { status: 400 }
+        )
+      }
+
+      const validation = calculateCouponDiscount(coupon, rawSubtotal, restaurantId, items)
+      if (!validation.valid) {
+        return NextResponse.json(
+          { error: validation.error || "كود الخصم غير متاح لهذا الطلب" },
+          { status: 400 }
+        )
+      }
+
+      verifiedCoupon = coupon
+      discountAmount = validation.discountAmount
+    }
+
+    // 6. Create Order and OrderItems in DB with server-validated pricing
+    const finalTotalPrice = Math.max(0, rawSubtotal - discountAmount) + deliveryCoverage.deliveryFee
 
     const newOrder = await prisma.order.create({
       data: {
@@ -101,6 +134,8 @@ export async function POST(req: Request) {
         branchId: branch.id,
         status: "pending",
         totalPrice: finalTotalPrice,
+        discountAmount: discountAmount,
+        couponId: verifiedCoupon ? verifiedCoupon.id : null,
         deliveryFee: deliveryCoverage.deliveryFee,
         distanceKm: deliveryCoverage.distanceKm,
         deliveryAddressId: address.id,
@@ -119,6 +154,7 @@ export async function POST(req: Request) {
         customer: { select: { name: true, phone: true } },
         branch: { select: { address: true } },
         deliveryAddress: true,
+        coupon: true,
       },
     })
 
