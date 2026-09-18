@@ -18,6 +18,8 @@ import { useLanguage } from '@/context/LanguageContext';
 import { fetchUserAddresses, addUserAddress, UserAddress } from '@/services/user';
 import { getCurrentLocation } from '@/services/location';
 
+import { LocationPickerMapModal } from '@/components/LocationPickerMapModal';
+
 export default function SavedAddressesScreen() {
   const router = useRouter();
   const { primaryColor } = useRestaurant();
@@ -26,6 +28,15 @@ export default function SavedAddressesScreen() {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
+
+  // Form states
+  const [label, setLabel] = useState<string>('');
+  const [details, setDetails] = useState<string>('');
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [locating, setLocating] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [showMapModal, setShowMapModal] = useState<boolean>(false);
 
   const [showManualInput, setShowManualInput] = useState<boolean>(false);
   const [manualLatStr, setManualLatStr] = useState<string>('');
@@ -209,6 +220,15 @@ export default function SavedAddressesScreen() {
                 />
 
                 <TouchableOpacity
+                  style={[styles.gpsButton, { backgroundColor: '#EFF6FF', borderColor: primaryColor, borderWidth: 1 }]}
+                  onPress={() => setShowMapModal(true)}
+                >
+                  <Text style={[styles.gpsButtonText, { color: primaryColor, fontWeight: 'bold' }]}>
+                    🗺️ {lat ? `${language === 'ar' ? 'تم اختيار موقع على الخريطة:' : 'Map Location Set:'} ${lat.toFixed(4)}, ${lng?.toFixed(4)}` : (language === 'ar' ? 'تحديد الموقع على الخريطة التفاعلية' : 'Pick Location on Interactive Map')}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   style={styles.gpsButton}
                   onPress={handleFetchCurrentGPS}
                   disabled={locating}
@@ -217,7 +237,7 @@ export default function SavedAddressesScreen() {
                     <ActivityIndicator color="#0F172A" />
                   ) : (
                     <Text style={styles.gpsButtonText}>
-                      📍 {lat ? `${language === 'ar' ? 'تم الالتقاط:' : 'Captured:'} ${lat.toFixed(4)}, ${lng?.toFixed(4)}` : (language === 'ar' ? 'التقاط الموقع الحالي عبر الـ GPS' : 'Get Current GPS Location')}
+                      🎯 {lat ? `${language === 'ar' ? 'تم التقاط الـ GPS:' : 'Captured:'} ${lat.toFixed(4)}, ${lng?.toFixed(4)}` : (language === 'ar' ? 'التقاط موقعي الحالي عبر الـ GPS' : 'Get Current GPS Location')}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -257,6 +277,18 @@ export default function SavedAddressesScreen() {
           }
         />
       )}
+
+      <LocationPickerMapModal
+        visible={showMapModal}
+        initialLat={lat}
+        initialLng={lng}
+        primaryColor={primaryColor}
+        onClose={() => setShowMapModal(false)}
+        onConfirm={(selectedLat, selectedLng) => {
+          setLat(selectedLat);
+          setLng(selectedLng);
+        }}
+      />
     </SafeAreaView>
   );
 }
