@@ -90,6 +90,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     updates: {
       url: `https://u.expo.dev/${process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '9fa21e7c-d00e-46b4-ac63-459b9f763647'}`,
+      checkAutomatically: 'ON_LOAD',
       fallbackToCacheTimeout: 0,
     },
     extra: {

@@ -5,6 +5,7 @@ import { RestaurantProvider, useRestaurant } from '@/context/RestaurantContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { AutoUpdateChecker } from '@/components/AutoUpdateChecker';
 
 function RootLayoutContent() {
   const { loading, restaurant, primaryColor } = useRestaurant();
@@ -25,12 +26,15 @@ function RootLayoutContent() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' },
-      }}
-    />
+    <>
+      <AutoUpdateChecker />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: '#FFFFFF' },
+        }}
+      />
+    </>
   );
 }
 
