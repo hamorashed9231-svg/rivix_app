@@ -50,6 +50,7 @@ export default async function DashboardLayout({
     { name: "إدارة المنيو والأصناف", href: "/dashboard/restaurant/menu", iconName: "UtensilsCrossed" },
     { name: "إدارة الفروع", href: "/dashboard/restaurant/branches", iconName: "GitFork" },
     { name: "خريطة مواقع وتحليلات العملاء", href: "/dashboard/restaurant/customers-map", iconName: "MapPin" },
+    { name: "رسائل العملاء والدعم", href: "/dashboard/restaurant/messages", iconName: "MessageSquare" },
     { name: "شاشة استقبال وتوجيه الطلبات", href: "/dashboard/orders", iconName: "ShoppingBag" },
   ]
 

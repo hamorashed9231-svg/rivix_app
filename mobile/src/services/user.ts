@@ -6,6 +6,10 @@ export interface UserAddress {
   lat: number;
   lng: number;
   details: string;
+  streetName?: string | null;
+  buildingNumber?: string | null;
+  floor?: string | null;
+  apartment?: string | null;
 }
 
 export interface UserProfile {
@@ -32,6 +36,10 @@ export const addUserAddress = async (addressData: {
   details: string;
   lat: number;
   lng: number;
+  streetName?: string;
+  buildingNumber?: string;
+  floor?: string;
+  apartment?: string;
 }): Promise<UserAddress | null> => {
   try {
     const response = await api.post('/api/customer/addresses', addressData);

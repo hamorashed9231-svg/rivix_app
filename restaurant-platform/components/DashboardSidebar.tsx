@@ -22,6 +22,7 @@ import {
   CreditCard,
   CheckSquare,
   MapPin,
+  MessageSquare,
 } from "lucide-react"
 import { SignOutButton } from "@/components/SignOutButton"
 
@@ -39,6 +40,7 @@ const iconMap: Record<string, any> = {
   CreditCard,
   CheckSquare,
   MapPin,
+  MessageSquare,
 }
 
 interface NavItem {

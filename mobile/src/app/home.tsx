@@ -168,35 +168,66 @@ export default function HomeScreen() {
   const renderMenuItem = ({ item }: { item: MenuItem }) => {
     const isAvailable = item.isAvailable !== false;
     const currentQty = getItemQuantity(item.id);
+    const hasDiscount = !!(item.originalPrice && item.originalPrice > item.price);
+    const discountPct = hasDiscount
+      ? Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100)
+      : 0;
 
     return (
       <TouchableOpacity
         style={[styles.card, !isAvailable && styles.disabledCard, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
         onPress={() => isAvailable && setSelectedItemForDetail(item)}
-        activeOpacity={0.85}
+        activeOpacity={0.88}
       >
-        <Image
-          source={{ uri: item.image || FALLBACK_ITEM_IMAGE }}
-          style={styles.cardImage}
-          resizeMode="cover"
-        />
+        {/* Item Image with Discount & Availability Badges */}
+        <View style={styles.cardImageWrapper}>
+          <Image
+            source={{ uri: item.image || FALLBACK_ITEM_IMAGE }}
+            style={styles.cardImage}
+            resizeMode="cover"
+          />
 
-        <View style={styles.cardInfo}>
-          <Text style={[styles.cardTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{item.name}</Text>
-          {item.description ? (
-            <Text style={[styles.cardDescription, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={1}>
-              {item.description}
-            </Text>
+          {hasDiscount && isAvailable ? (
+            <View style={[styles.discountBadge, isRTL ? { right: 6 } : { left: 6 }]}>
+              <Text style={styles.discountBadgeText}>
+                🔥 -{discountPct}%
+              </Text>
+            </View>
           ) : null}
+        </View>
 
+        {/* Item Information */}
+        <View style={styles.cardInfo}>
+          <View>
+            <Text style={[styles.cardTitle, { textAlign: isRTL ? 'right' : 'left' }]}>{item.name}</Text>
+            {item.description ? (
+              <Text style={[styles.cardDescription, { textAlign: isRTL ? 'right' : 'left' }]} numberOfLines={2}>
+                {item.description}
+              </Text>
+            ) : null}
+          </View>
+
+          {/* Pricing & Cart Action */}
           <View style={[styles.cardFooter, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.cardPrice, { color: primaryColor }]}>
-              {item.price} {t('currency')}
-            </Text>
+            <View style={[styles.priceContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+              <Text style={[styles.cardPrice, { color: primaryColor }]}>
+                {item.price} <Text style={styles.currencyText}>{t('currency')}</Text>
+              </Text>
+
+              {hasDiscount ? (
+                <Text style={styles.originalPriceText}>
+                  {item.originalPrice} {t('currency')}
+                </Text>
+              ) : null}
+            </View>
 
             {isAvailable ? (
               <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: primaryColor }]}
+                style={[
+                  styles.addButton,
+                  { backgroundColor: primaryColor },
+                  currentQty > 0 && styles.addButtonActive,
+                ]}
                 onPress={(e) => {
                   e.stopPropagation();
                   addItem(item);
@@ -207,17 +238,15 @@ export default function HomeScreen() {
                   {currentQty > 0 ? `+ (${currentQty})` : `+ ${t('addToCart')}`}
                 </Text>
               </TouchableOpacity>
-            ) : null}
+            ) : (
+              <View style={styles.unavailableBadgeInline}>
+                <Text style={styles.unavailableTextInline}>
+                  {language === 'ar' ? 'غير متاح' : 'Sold Out'}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
-
-        {!isAvailable ? (
-          <View style={[styles.unavailableBadge, isRTL ? { left: 12 } : { right: 12 }]}>
-            <Text style={styles.unavailableText}>
-              {language === 'ar' ? 'غير متاح حالياً' : 'Unavailable'}
-            </Text>
-          </View>
-        ) : null}
       </TouchableOpacity>
     );
   };
@@ -329,10 +358,13 @@ export default function HomeScreen() {
                 key={cat.id}
                 style={[
                   styles.tab,
-                  isSelected && { backgroundColor: primaryColor, borderColor: primaryColor },
+                  isSelected && [
+                    styles.selectedTab,
+                    { backgroundColor: primaryColor, borderColor: primaryColor, shadowColor: primaryColor },
+                  ],
                 ]}
                 onPress={() => setSelectedCategory(cat.id)}
-                activeOpacity={0.7}
+                activeOpacity={0.75}
               >
                 <Text
                   style={[
@@ -533,33 +565,39 @@ const styles = StyleSheet.create({
   tabsContainer: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F1F5F9',
   },
   tabsScroll: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 8,
+    gap: 10,
   },
   tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
-    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+  },
+  selectedTab: {
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 13.5,
     color: '#475569',
     fontWeight: '600',
   },
   selectedTabText: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   listContent: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 110,
     gap: 14,
   },
   emptyContainer: {
@@ -572,59 +610,121 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    elevation: 3,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     padding: 12,
     gap: 12,
     position: 'relative',
   },
   disabledCard: {
-    opacity: 0.55,
+    opacity: 0.6,
+  },
+  cardImageWrapper: {
+    position: 'relative',
+    width: 96,
+    height: 96,
+    borderRadius: 14,
+    overflow: 'hidden',
   },
   cardImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 10,
-    backgroundColor: '#E2E8F0',
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#F1F5F9',
+  },
+  discountBadge: {
+    position: 'absolute',
+    top: 6,
+    backgroundColor: '#E11D48',
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  discountBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10.5,
+    fontWeight: '800',
   },
   cardInfo: {
     flex: 1,
     justifyContent: 'space-between',
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1E293B',
+    fontSize: 15.5,
+    fontWeight: '800',
+    color: '#0F172A',
+    lineHeight: 21,
   },
   cardDescription: {
-    fontSize: 13,
+    fontSize: 12.5,
     color: '#64748B',
-    marginTop: 2,
-    lineHeight: 18,
+    marginTop: 3,
+    lineHeight: 17.5,
   },
   cardFooter: {
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 8,
   },
+  priceContainer: {
+    alignItems: 'baseline',
+    gap: 6,
+  },
   cardPrice: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
+  },
+  currencyText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  originalPriceText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    textDecorationLine: 'line-through',
+    fontWeight: '500',
   },
   addButton: {
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 14,
-    borderRadius: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  addButtonActive: {
+    transform: [{ scale: 1.02 }],
   },
   addButtonText: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: 'bold',
+    fontSize: 12.5,
+    fontWeight: '800',
+  },
+  unavailableBadgeInline: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  unavailableTextInline: {
+    color: '#EF4444',
+    fontSize: 11,
+    fontWeight: '700',
   },
   unavailableBadge: {
     position: 'absolute',

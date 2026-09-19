@@ -32,6 +32,10 @@ export default function SavedAddressesScreen() {
   // Form states
   const [label, setLabel] = useState<string>('');
   const [details, setDetails] = useState<string>('');
+  const [streetName, setStreetName] = useState<string>('');
+  const [buildingNumber, setBuildingNumber] = useState<string>('');
+  const [floor, setFloor] = useState<string>('');
+  const [apartment, setApartment] = useState<string>('');
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [locating, setLocating] = useState<boolean>(false);
@@ -41,6 +45,7 @@ export default function SavedAddressesScreen() {
   const [showManualInput, setShowManualInput] = useState<boolean>(false);
   const [manualLatStr, setManualLatStr] = useState<string>('');
   const [manualLngStr, setManualLngStr] = useState<string>('');
+  const [isStaleLocation, setIsStaleLocation] = useState<boolean>(false);
 
   const isInvalid = (l: number | null, lg: number | null) => {
     if (!l || !lg) return true;
@@ -52,6 +57,7 @@ export default function SavedAddressesScreen() {
 
   const handleFetchCurrentGPS = async () => {
     setLocating(true);
+    setIsStaleLocation(false);
     const coords = await getCurrentLocation();
     setLocating(false);
 
@@ -60,10 +66,21 @@ export default function SavedAddressesScreen() {
       setLng(coords.longitude);
       setManualLatStr(coords.latitude.toString());
       setManualLngStr(coords.longitude.toString());
-      Alert.alert(
-        language === 'ar' ? 'تم تحديد الموقع' : 'Location Found',
-        `${language === 'ar' ? 'الإحداثيات: ' : 'Coords: '} ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`
-      );
+
+      if (coords.isStale) {
+        setIsStaleLocation(true);
+        Alert.alert(
+          language === 'ar' ? 'تنبيه دقة الموقع' : 'Location Accuracy Warning',
+          language === 'ar'
+            ? 'آخر موقع معروف (قد لا يكون دقيقًا) — حدد موقعك الحالي يدويًا لو مختلف'
+            : 'Last known location (may not be accurate) — set your current location manually if different.'
+        );
+      } else {
+        Alert.alert(
+          language === 'ar' ? 'تم تحديد الموقع' : 'Location Found',
+          `${language === 'ar' ? 'الإحداثيات: ' : 'Coords: '} ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`
+        );
+      }
     } else {
       setShowManualInput(true);
       Alert.alert(
@@ -120,6 +137,10 @@ export default function SavedAddressesScreen() {
       details,
       lat: lat!,
       lng: lng!,
+      streetName: streetName.trim() || undefined,
+      buildingNumber: buildingNumber.trim() || undefined,
+      floor: floor.trim() || undefined,
+      apartment: apartment.trim() || undefined,
     });
 
     setSubmitting(false);
@@ -131,6 +152,10 @@ export default function SavedAddressesScreen() {
       );
       setLabel('');
       setDetails('');
+      setStreetName('');
+      setBuildingNumber('');
+      setFloor('');
+      setApartment('');
       setLat(null);
       setLng(null);
       setManualLatStr('');
@@ -147,6 +172,8 @@ export default function SavedAddressesScreen() {
 
   const renderAddressCard = ({ item }: { item: UserAddress }) => {
     const hasInvalidCoords = isInvalid(item.lat, item.lng);
+    const hasManualDetails = item.streetName || item.buildingNumber || item.floor || item.apartment;
+
     return (
       <View style={[styles.card, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <View style={[styles.iconCircle, hasInvalidCoords && { backgroundColor: '#FEE2E2' }]}>
@@ -155,6 +182,18 @@ export default function SavedAddressesScreen() {
         <View style={styles.addressInfo}>
           <Text style={[styles.addressLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{item.label}</Text>
           <Text style={[styles.addressDetails, { textAlign: isRTL ? 'right' : 'left' }]}>{item.details}</Text>
+
+          {hasManualDetails ? (
+            <Text style={[styles.manualDetailText, { textAlign: isRTL ? 'right' : 'left' }]}>
+              🏢 {[
+                item.streetName ? `${language === 'ar' ? 'شارع: ' : 'Street: '}${item.streetName}` : null,
+                item.buildingNumber ? `${language === 'ar' ? 'عمارة: ' : 'Bldg: '}${item.buildingNumber}` : null,
+                item.floor ? `${language === 'ar' ? 'دور: ' : 'Floor: '}${item.floor}` : null,
+                item.apartment ? `${language === 'ar' ? 'شقة: ' : 'Apt: '}${item.apartment}` : null,
+              ].filter(Boolean).join(' | ')}
+            </Text>
+          ) : null}
+
           <Text style={[styles.addressCoords, { textAlign: isRTL ? 'right' : 'left' }, hasInvalidCoords && { color: '#EF4444', fontWeight: 'bold' }]}>
             {hasInvalidCoords
               ? (language === 'ar' ? '⚠️ يتطلب تحديد الموقع على الخريطة' : '⚠️ Requires map location')
@@ -219,6 +258,37 @@ export default function SavedAddressesScreen() {
                   onChangeText={setDetails}
                 />
 
+                {/* Manual Address Detail Fields */}
+                <View style={styles.detailRow}>
+                  <TextInput
+                    style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                    placeholder={language === 'ar' ? 'اسم الشارع' : 'Street Name'}
+                    value={streetName}
+                    onChangeText={setStreetName}
+                  />
+                  <TextInput
+                    style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                    placeholder={language === 'ar' ? 'رقم العمارة' : 'Bldg No'}
+                    value={buildingNumber}
+                    onChangeText={setBuildingNumber}
+                  />
+                </View>
+
+                <View style={styles.detailRow}>
+                  <TextInput
+                    style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                    placeholder={language === 'ar' ? 'الدور' : 'Floor'}
+                    value={floor}
+                    onChangeText={setFloor}
+                  />
+                  <TextInput
+                    style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                    placeholder={language === 'ar' ? 'الشقة' : 'Apartment'}
+                    value={apartment}
+                    onChangeText={setApartment}
+                  />
+                </View>
+
                 <TouchableOpacity
                   style={[styles.gpsButton, { backgroundColor: '#EFF6FF', borderColor: primaryColor, borderWidth: 1 }]}
                   onPress={() => setShowMapModal(true)}
@@ -241,6 +311,16 @@ export default function SavedAddressesScreen() {
                     </Text>
                   )}
                 </TouchableOpacity>
+
+                {isStaleLocation && (
+                  <View style={{ backgroundColor: '#FEF3C7', borderColor: '#F59E0B', borderWidth: 1, borderRadius: 10, padding: 10, marginVertical: 4 }}>
+                    <Text style={{ color: '#92400E', fontSize: 12, fontWeight: 'bold', textAlign: isRTL ? 'right' : 'left' }}>
+                      ⚠️ {language === 'ar'
+                        ? 'آخر موقع معروف (قد لا يكون دقيقًا) — حدد موقعك الحالي يدويًا لو مختلف'
+                        : 'Last known location (may not be accurate) — set your current location manually if different'}
+                    </Text>
+                  </View>
+                )}
 
                 <TouchableOpacity
                   style={[styles.saveBtn, { backgroundColor: primaryColor }]}
@@ -401,6 +481,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     backgroundColor: '#F8FAFC',
     marginBottom: 12,
+  },
+  halfInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  manualDetailText: {
+    fontSize: 12,
+    color: '#475569',
+    marginTop: 2,
+    fontWeight: '500',
   },
   textArea: {
     minHeight: 70,

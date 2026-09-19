@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const userId = user.id
 
     const body = await req.json()
-    const { label, details, lat, lng } = body
+    const { label, details, lat, lng, streetName, buildingNumber, floor, apartment } = body
 
     if (!label || !details) {
       return NextResponse.json({ error: "تسمية وتفاصيل العنوان مطلوبة" }, { status: 400 })
@@ -43,10 +43,14 @@ export async function POST(req: Request) {
         details,
         lat: parseFloat(lat || "24.7136"),
         lng: parseFloat(lng || "46.6753"),
+        streetName: streetName ? String(streetName).trim() : null,
+        buildingNumber: buildingNumber ? String(buildingNumber).trim() : null,
+        floor: floor ? String(floor).trim() : null,
+        apartment: apartment ? String(apartment).trim() : null,
       },
     })
 
-    return NextResponse.json({ message: "تم إحفظ العنوان بنجاح", address: newAddress }, { status: 201 })
+    return NextResponse.json({ message: "تم حفظ العنوان بنجاح", address: newAddress }, { status: 201 })
   } catch (error) {
     console.error("Create Address Error:", error)
     return NextResponse.json({ error: "حدث خطأ أثناء إضافة العنوان" }, { status: 500 })

@@ -81,6 +81,17 @@ export default function ProfileScreen() {
             <Text style={styles.arrowIcon}>{isRTL ? '←' : '→'}</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[styles.menuRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+            onPress={() => router.push('/support')}
+          >
+            <Text style={styles.menuIcon}>💬</Text>
+            <Text style={[styles.menuTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {language === 'ar' ? 'تواصل معنا وخدمة العملاء' : 'Contact Us & Support'}
+            </Text>
+            <Text style={styles.arrowIcon}>{isRTL ? '←' : '→'}</Text>
+          </TouchableOpacity>
+
           <View style={styles.rowDivider} />
 
           <TouchableOpacity

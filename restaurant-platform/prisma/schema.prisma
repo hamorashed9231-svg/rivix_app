@@ -90,16 +90,21 @@ model User {
   staffMemberships RestaurantStaff[]
   driverProfile    DriverProfile?
   riderOrders      Order[]           @relation("RiderOrders")
+  customerMessages CustomerMessage[] @relation("CustomerMessages")
 }
 
 model Address {
-  id      String @id @default(cuid())
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  label   String
-  lat     Float
-  lng     Float
-  details String
+  id             String  @id @default(cuid())
+  userId         String
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label          String
+  lat            Float
+  lng            Float
+  details        String
+  streetName     String?
+  buildingNumber String?
+  floor          String?
+  apartment      String?
 
   orders Order[] @relation("DeliveryAddressOrders")
 }
@@ -120,13 +125,14 @@ model Restaurant {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  branches       Branch[]
-  coupons        Coupon[]
-  reviews        Review[]
-  staffMembers   RestaurantStaff[]
-  paymentNumbers PaymentNumber[]
-  menuCategories MenuCategory[]
-  driverProfiles DriverProfile[]
+  branches         Branch[]
+  coupons          Coupon[]
+  reviews          Review[]
+  staffMembers     RestaurantStaff[]
+  paymentNumbers   PaymentNumber[]
+  menuCategories   MenuCategory[]
+  driverProfiles   DriverProfile[]
+  customerMessages CustomerMessage[]
 }
 
 model RestaurantStaff {
@@ -413,5 +419,23 @@ model Review {
   comment        String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+}
+
+model CustomerMessage {
+  id           String    @id @default(cuid())
+  customerId   String
+  customer     User      @relation("CustomerMessages", fields: [customerId], references: [id], onDelete: Cascade)
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  subject      String?
+  message      String
+  type         String    @default("inquiry") // "inquiry" | "complaint"
+  imageUrl     String?
+  reply        String?
+  repliedAt    DateTime?
+  repliedById  String?
+  status       String    @default("unread")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 

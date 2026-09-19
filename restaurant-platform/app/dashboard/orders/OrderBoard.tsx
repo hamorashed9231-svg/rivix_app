@@ -383,7 +383,19 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                   {order.deliveryAddress?.details && (
                     <div className="flex items-start gap-2 text-slate-400 text-[11px]">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                      <span>{order.deliveryAddress.details}</span>
+                      <span>
+                        {order.deliveryAddress.details}
+                        {(order.deliveryAddress.streetName || order.deliveryAddress.buildingNumber || order.deliveryAddress.floor || order.deliveryAddress.apartment) && (
+                          <span className="block text-slate-300 text-[10px] mt-0.5">
+                            🏢 {[
+                              order.deliveryAddress.streetName ? `شارع: ${order.deliveryAddress.streetName}` : null,
+                              order.deliveryAddress.buildingNumber ? `عمارة: ${order.deliveryAddress.buildingNumber}` : null,
+                              order.deliveryAddress.floor ? `دور: ${order.deliveryAddress.floor}` : null,
+                              order.deliveryAddress.apartment ? `شقة: ${order.deliveryAddress.apartment}` : null,
+                            ].filter(Boolean).join(" | ")}
+                          </span>
+                        )}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -509,7 +521,19 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
               <div className="bg-slate-900 p-3 rounded-xl space-y-1">
                 <p className="text-slate-400">العميل: <strong className="text-white">{selectedOrderDetails.customer?.name}</strong></p>
                 <p className="text-slate-400">الهاتف: <strong className="text-cyan-400 font-mono">{selectedOrderDetails.customer?.phone}</strong></p>
-                <p className="text-slate-400">العنوان: <strong className="text-white">{selectedOrderDetails.deliveryAddress?.details}</strong></p>
+                <p className="text-slate-400">
+                  العنوان: <strong className="text-white">{selectedOrderDetails.deliveryAddress?.details}</strong>
+                  {(selectedOrderDetails.deliveryAddress?.streetName || selectedOrderDetails.deliveryAddress?.buildingNumber || selectedOrderDetails.deliveryAddress?.floor || selectedOrderDetails.deliveryAddress?.apartment) && (
+                    <span className="block text-slate-300 font-normal mt-0.5">
+                      🏢 {[
+                        selectedOrderDetails.deliveryAddress?.streetName ? `شارع: ${selectedOrderDetails.deliveryAddress.streetName}` : null,
+                        selectedOrderDetails.deliveryAddress?.buildingNumber ? `عمارة: ${selectedOrderDetails.deliveryAddress.buildingNumber}` : null,
+                        selectedOrderDetails.deliveryAddress?.floor ? `دور: ${selectedOrderDetails.deliveryAddress.floor}` : null,
+                        selectedOrderDetails.deliveryAddress?.apartment ? `شقة: ${selectedOrderDetails.deliveryAddress.apartment}` : null,
+                      ].filter(Boolean).join(" | ")}
+                    </span>
+                  )}
+                </p>
               </div>
 
               <div className="bg-slate-900 p-3 rounded-xl space-y-2">

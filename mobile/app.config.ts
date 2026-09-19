@@ -75,9 +75,22 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           color: '#f37f20',
         },
       ],
+      [
+        'expo-location',
+        {
+          locationWhenInUsePermission: `نحتاج موقعك لتحديد عنوان التوصيل بدقة وحساب المسافة من أقرب فرع لمطعم ${appName}`,
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,
+    },
+    runtimeVersion: {
+      policy: 'appVersion',
+    },
+    updates: {
+      url: `https://u.expo.dev/${process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '9fa21e7c-d00e-46b4-ac63-459b9f763647'}`,
+      fallbackToCacheTimeout: 0,
     },
     extra: {
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://restaurant-platform-ecru.vercel.app',
