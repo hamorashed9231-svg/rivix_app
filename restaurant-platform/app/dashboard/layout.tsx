@@ -17,8 +17,30 @@ export default async function DashboardLayout({
   const isAdmin = user.role === "admin"
   const isOwner = user.role === "restaurant_owner"
 
+  // Check Call Center Staff / Manager membership
+  let isCallCenterManager = false
+  let isCallCenterStaff = false
+
   if (!isAdmin && !isOwner) {
-    redirect("/?error=unauthorized")
+    const staffRecord = await prisma.restaurantStaff.findFirst({
+      where: {
+        userId: user.id,
+        isActive: true,
+      },
+      include: {
+        restaurant: true,
+      },
+    })
+
+    if (staffRecord) {
+      if (staffRecord.staffRole === "manager") {
+        isCallCenterManager = true
+      } else {
+        isCallCenterStaff = true
+      }
+    } else {
+      redirect("/?error=unauthorized")
+    }
   }
 
   let pendingOwnersCount = 0
@@ -31,6 +53,7 @@ export default async function DashboardLayout({
     })
   }
 
+  // 1. Super Admin Navigation
   const adminNav = [
     { name: "لوحة الأدمن الرئيسية", href: "/dashboard/admin", iconName: "ShieldCheck" },
     { name: "طلبات أصحاب المطاعم", href: "/dashboard/admin/owners", iconName: "UserCheck", badge: pendingOwnersCount },
@@ -40,9 +63,11 @@ export default async function DashboardLayout({
     { name: "تتبع طلبات المنصة", href: "/dashboard/orders", iconName: "ShoppingBag" },
   ]
 
+  // 2. Restaurant Owner Navigation
   const ownerNav = [
     { name: "لوحة تحكم المطعم", href: "/dashboard/restaurant", iconName: "LayoutDashboard" },
-    { name: "إدارة طاقم العمل", href: "/dashboard/restaurant/staff", iconName: "Users" },
+    { name: "التحكم في واجهة العميل والعروض", href: "/dashboard/restaurant/customization", iconName: "Sparkles" },
+    { name: "طاقم العمل والكول سنتر", href: "/dashboard/restaurant/staff", iconName: "Users" },
     { name: "أرقام الدفع اليدوي", href: "/dashboard/restaurant/payment-numbers", iconName: "CreditCard" },
     { name: "مراجعة المدفوعات", href: "/dashboard/restaurant/payments", iconName: "CheckSquare" },
     { name: "إدارة الكوبونات والخصومات", href: "/dashboard/admin/coupons", iconName: "Tag" },
@@ -54,10 +79,44 @@ export default async function DashboardLayout({
     { name: "شاشة استقبال وتوجيه الطلبات", href: "/dashboard/orders", iconName: "ShoppingBag" },
   ]
 
-  const navItems = isAdmin ? adminNav : ownerNav
+  // 3. Call Center Manager Navigation
+  const callCenterManagerNav = [
+    { name: "شاشة استقبال وتوجيه الطلبات", href: "/dashboard/orders", iconName: "ShoppingBag" },
+    { name: "التحكم في واجهة العميل والعروض", href: "/dashboard/restaurant/customization", iconName: "Sparkles" },
+    { name: "إدارة المنيو والأصناف", href: "/dashboard/restaurant/menu", iconName: "UtensilsCrossed" },
+    { name: "رسائل وشكاوى العملاء", href: "/dashboard/restaurant/messages", iconName: "MessageSquare" },
+    { name: "خريطة مواقع وتحليلات العملاء", href: "/dashboard/restaurant/customers-map", iconName: "MapPin" },
+    { name: "متابعة طاقم الكول سنتر", href: "/dashboard/restaurant/staff", iconName: "Users" },
+  ]
+
+  // 4. Call Center Staff Navigation
+  const callCenterStaffNav = [
+    { name: "شاشة استقبال وتوجيه الطلبات", href: "/dashboard/orders", iconName: "ShoppingBag" },
+    { name: "استعراض المنيو والأصناف", href: "/dashboard/restaurant/menu", iconName: "UtensilsCrossed" },
+    { name: "رسائل واستفسارات العملاء", href: "/dashboard/restaurant/messages", iconName: "MessageSquare" },
+  ]
+
+  let navItems = ownerNav
+  let roleTitle = "مالك المطعم"
+
+  if (isAdmin) {
+    navItems = adminNav
+    roleTitle = "مدير المنصة"
+  } else if (isCallCenterManager) {
+    navItems = callCenterManagerNav
+    roleTitle = "مدير الكول سنتر"
+  } else if (isCallCenterStaff) {
+    navItems = callCenterStaffNav
+    roleTitle = "موظف كول سنتر"
+  }
 
   return (
-    <DashboardSidebar navItems={navItems} user={{ name: user.name, role: user.role }} isAdmin={isAdmin}>
+    <DashboardSidebar
+      navItems={navItems}
+      user={{ name: user.name || "مستخدم", role: user.role }}
+      isAdmin={isAdmin}
+      roleTitle={roleTitle}
+    >
       {children}
     </DashboardSidebar>
   )

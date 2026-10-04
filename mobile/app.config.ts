@@ -2,7 +2,7 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 import fs from 'fs';
 import path from 'path';
 
-export default ({ config }: ConfigContext): ExpoConfig => {
+export default ({ config }: ConfigContext): any => {
   const slug = process.env.EXPO_PUBLIC_RESTAURANT_SLUG || 'am-eissa';
   const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9]/g, '');
   const rawAppName = process.env.EXPO_PUBLIC_APP_NAME || 'عم عيسى';
@@ -16,6 +16,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   // Dynamic per-restaurant icon resolution logic
   const projectRoot = __dirname;
+  const restaurantAdaptivePng = `./assets/restaurants/${slug}/adaptive-icon.png`;
   const restaurantIconPng = `./assets/restaurants/${slug}/icon.png`;
   const restaurantIconJpg = `./assets/restaurants/${slug}/icon.jpg`;
 
@@ -24,6 +25,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     selectedIcon = restaurantIconPng;
   } else if (fs.existsSync(path.join(projectRoot, restaurantIconJpg))) {
     selectedIcon = restaurantIconJpg;
+  }
+
+  let selectedAdaptiveIcon = selectedIcon;
+  if (fs.existsSync(path.join(projectRoot, restaurantAdaptivePng))) {
+    selectedAdaptiveIcon = restaurantAdaptivePng;
   }
 
   return {
@@ -38,7 +44,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     splash: {
       image: selectedIcon,
       resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#9d3a11',
     },
     ios: {
       supportsTablet: true,
@@ -51,8 +57,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     android: {
       package: androidPackage,
       adaptiveIcon: {
-        foregroundImage: selectedIcon,
-        backgroundColor: '#ffffff',
+        foregroundImage: selectedAdaptiveIcon,
+        backgroundColor: '#9d3a11',
       },
       permissions: [
         'ACCESS_FINE_LOCATION',

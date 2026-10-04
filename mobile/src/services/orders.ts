@@ -82,6 +82,7 @@ export const createCustomerOrder = async (orderData: {
   customerLat?: number;
   customerLng?: number;
   paymentMethod?: string;
+  couponCode?: string;
 }): Promise<{ success: boolean; order?: OrderDetails; error?: string }> => {
   try {
     const response = await api.post('/api/customer/orders', orderData);

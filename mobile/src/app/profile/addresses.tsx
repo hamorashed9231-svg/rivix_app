@@ -29,6 +29,17 @@ export default function SavedAddressesScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
 
+  const loadAddresses = async () => {
+    setLoading(true);
+    const list = await fetchUserAddresses();
+    setAddresses(list);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadAddresses();
+  }, []);
+
   // Form states
   const [label, setLabel] = useState<string>('');
   const [details, setDetails] = useState<string>('');

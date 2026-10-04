@@ -24,14 +24,15 @@ export interface BranchData {
   name: string
   address: string
   phone: string
-  lat: number
-  lng: number
+  lat?: number | null
+  lng?: number | null
   isActive: boolean
   openingHours?: any
-  deliveryRadiusKm?: number
-  baseDeliveryFee?: number
-  pricePerKm?: number
-  minOrderForDelivery?: number
+  deliveryEnabled?: boolean
+  deliveryRadiusKm?: number | null
+  baseDeliveryFee?: number | null
+  pricePerKm?: number | null
+  minOrderForDelivery?: number | null
 }
 
 interface BranchFormProps {

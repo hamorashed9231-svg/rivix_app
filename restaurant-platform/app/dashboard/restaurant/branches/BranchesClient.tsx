@@ -200,7 +200,7 @@ export function BranchesClient({
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-cyan-400 shrink-0" />
                       <span className="font-mono text-slate-400">
-                        الإحداثيات: Lat {branch.lat.toFixed(4)}, Lng {branch.lng.toFixed(4)}
+                        الإحداثيات: Lat {branch.lat != null ? branch.lat.toFixed(4) : "—"}, Lng {branch.lng != null ? branch.lng.toFixed(4) : "—"}
                       </span>
                     </div>
                   </div>

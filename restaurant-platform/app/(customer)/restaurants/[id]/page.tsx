@@ -87,16 +87,16 @@ export default async function RestaurantDetailPage({
       {/* Restaurant Header Details */}
       <div className="px-4 -mt-12 relative z-10 space-y-3">
         <div className="flex justify-between items-end">
-          <div className="w-20 h-20 rounded-3xl bg-[#0B192C] border-2 border-[var(--restaurant-primary,#f37f20)] p-1.5 shadow-2xl overflow-hidden relative">
+          <div className="w-20 h-20 rounded-2xl bg-white border-2 border-[var(--restaurant-primary,#f37f20)] p-1 shadow-2xl overflow-hidden relative flex items-center justify-center">
             {restaurant.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={restaurant.logo}
                 alt={restaurant.name}
-                className="w-full h-full object-cover rounded-2xl"
+                className="w-full h-full object-contain rounded-xl"
               />
             ) : (
-              <div className="w-full h-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-xl font-bold rounded-2xl">
+              <div className="w-full h-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-xl font-bold rounded-xl">
                 {restaurant.name.charAt(0)}
               </div>
             )}
@@ -142,6 +142,10 @@ export default async function RestaurantDetailPage({
           restaurantId={restaurant.id}
           restaurantName={restaurant.name}
           categories={restaurant.menuCategories && restaurant.menuCategories.length > 0 ? restaurant.menuCategories : defaultBranch?.menuCategories || []}
+          bannerTitle={restaurant.bannerTitle}
+          bannerSubtitle={restaurant.bannerSubtitle}
+          bannerBadge={restaurant.bannerBadge}
+          bannerActive={restaurant.bannerActive}
         />
       ) : (
         <div className="p-8 text-center text-xs text-slate-500">لا توجد أصناف مضافة حالياً.</div>

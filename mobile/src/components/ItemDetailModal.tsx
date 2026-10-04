@@ -10,7 +10,7 @@ import {
   SafeAreaView,
   Platform,
 } from 'react-native';
-import { MenuItem } from '@/context/RestaurantContext';
+import { MenuItem } from '@/services/restaurant';
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -29,15 +29,39 @@ export function ItemDetailModal({
 }: ItemDetailModalProps) {
   if (!item) return null;
 
-  const { addToCart } = useCart();
+  const { addItem } = useCart();
   const { t, language, isRTL } = useLanguage();
 
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
   const [imageError, setImageError] = useState<boolean>(false);
 
+  // Initialize selected options with defaults
+  React.useEffect(() => {
+    if (item?.optionGroups) {
+      const initial: Record<string, any> = {};
+      item.optionGroups.forEach((g: any) => {
+        const def = g.options?.find((o: any) => o.isDefault) || (g.isRequired && g.options?.[0]);
+        if (def) initial[g.name] = def;
+      });
+      setSelectedOptions(initial);
+    } else {
+      setSelectedOptions({});
+    }
+    setQuantity(1);
+  }, [item]);
+
   const fallbackPlaceholder = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop';
   const imageUrl = (!imageError && item.image) ? item.image : fallbackPlaceholder;
+
+  let extraCost = 0;
+  const selectedLabels: string[] = [];
+  Object.values(selectedOptions).forEach((opt: any) => {
+    if (opt?.price) extraCost += opt.price;
+    if (opt?.name) selectedLabels.push(opt.name);
+  });
+  const unitPrice = item.price + extraCost;
+  const totalPrice = unitPrice * quantity;
 
   const hasDiscount = item.originalPrice && item.originalPrice > item.price;
   const discountPercent = hasDiscount
@@ -45,8 +69,14 @@ export function ItemDetailModal({
     : 0;
 
   const handleAddToCart = () => {
+    const customItem: MenuItem = {
+      ...item,
+      id: selectedLabels.length > 0 ? `${item.id}_${selectedLabels.join('_')}` : item.id,
+      name: selectedLabels.length > 0 ? `${item.name} (${selectedLabels.join(' + ')})` : item.name,
+      price: unitPrice,
+    };
     for (let i = 0; i < quantity; i++) {
-      addToCart(item, selectedOptions);
+      addItem(customItem);
     }
     onClose();
     setQuantity(1);
@@ -92,7 +122,7 @@ export function ItemDetailModal({
               
               <View style={[styles.priceRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text style={[styles.priceText, { color: primaryColor }]}>
-                  {item.price} {t('currency')}
+                  {unitPrice} {t('currency')}
                 </Text>
                 {hasDiscount && (
                   <Text style={styles.originalPriceText}>
@@ -172,7 +202,7 @@ export function ItemDetailModal({
               activeOpacity={0.85}
             >
               <Text style={styles.addToCartBtnText}>
-                {language === 'ar' ? 'إضافة إلى السلة' : 'Add to Cart'} ({(item.price * quantity).toFixed(0)} {t('currency')})
+                {language === 'ar' ? 'إضافة إلى السلة' : 'Add to Cart'} ({totalPrice.toFixed(0)} {t('currency')})
               </Text>
             </TouchableOpacity>
           </View>

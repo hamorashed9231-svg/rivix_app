@@ -103,7 +103,9 @@ export function calculateDeliveryForCustomer(
     let minDist = Infinity;
 
     for (const b of activeBranches) {
-      const dist = haversineKm(customerLat, customerLng, b.lat, b.lng);
+      const bLat = b.lat ?? 0;
+      const bLng = b.lng ?? 0;
+      const dist = haversineKm(customerLat, customerLng, bLat, bLng);
       if (dist < minDist) {
         minDist = dist;
         closestBranch = b;

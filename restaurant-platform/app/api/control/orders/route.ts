@@ -69,7 +69,7 @@ export async function GET(req: Request) {
         id: ord.id,
         orderNumber: ord.posReferenceId || ord.id.slice(-6).toUpperCase(),
         status: ord.riderDeliveryStatus || "pending",
-        riderId: ord.riderId || ord.riderProfile?.userId || null,
+        riderId: ord.riderId || ord.riderProfile?.user?.id || null,
         riderName,
         riderCode,
         customerName: ord.customer?.name || "عميل",

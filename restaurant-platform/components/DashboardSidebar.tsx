@@ -23,6 +23,7 @@ import {
   CheckSquare,
   MapPin,
   MessageSquare,
+  Sparkles,
 } from "lucide-react"
 import { SignOutButton } from "@/components/SignOutButton"
 
@@ -41,6 +42,7 @@ const iconMap: Record<string, any> = {
   CheckSquare,
   MapPin,
   MessageSquare,
+  Sparkles,
 }
 
 interface NavItem {
@@ -57,6 +59,7 @@ interface DashboardSidebarProps {
     role: string
   }
   isAdmin: boolean
+  roleTitle?: string
   children: React.ReactNode
 }
 
@@ -64,6 +67,7 @@ export function DashboardSidebar({
   navItems,
   user,
   isAdmin,
+  roleTitle,
   children,
 }: DashboardSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -206,7 +210,7 @@ export function DashboardSidebar({
                 <div className="truncate">
                   <p className="text-sm font-semibold text-white truncate">{user.name}</p>
                   <span className="inline-block text-[11px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-medium">
-                    {isAdmin ? "مدير المنصة" : "صاحب مطعم"}
+                    {roleTitle || (isAdmin ? "مدير المنصة" : "صاحب مطعم")}
                   </span>
                 </div>
               )}

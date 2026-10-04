@@ -122,7 +122,7 @@ export async function POST(req: Request) {
       }
 
       verifiedCoupon = coupon
-      discountAmount = validation.discountAmount
+      discountAmount = validation.discountAmount || 0
     }
 
     // 6. Create Order and OrderItems in DB with server-validated pricing

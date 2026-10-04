@@ -1,8 +1,8 @@
 export interface BranchDeliverySettings {
   id: string;
   name: string;
-  lat: number;
-  lng: number;
+  lat?: number | null;
+  lng?: number | null;
   deliveryEnabled?: boolean;
   deliveryRadiusKm?: number | null;
   baseDeliveryFee?: number | null;

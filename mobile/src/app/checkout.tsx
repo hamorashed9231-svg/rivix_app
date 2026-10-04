@@ -23,7 +23,8 @@ import { validateCouponCode } from '@/services/coupon';
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { restaurant, branches, primaryColor } = useRestaurant();
+  const { restaurant, primaryColor } = useRestaurant();
+  const branches = (restaurant as any)?.branches || [];
   const {
     items,
     getTotal,
@@ -146,8 +147,8 @@ export default function CheckoutScreen() {
 
     setSubmitting(true);
     const orderItems = items.map((item) => ({
-      id: item.id,
-      menuItemId: item.id,
+      id: item.id || item.menuItemId,
+      menuItemId: item.menuItemId,
       quantity: item.quantity,
       price: item.price,
       notes: item.notes,

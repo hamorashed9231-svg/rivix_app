@@ -2,7 +2,20 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Plus, Minus, Check, Utensils, X, Layers, Tag } from "lucide-react"
+import {
+  Plus,
+  Minus,
+  Check,
+  Utensils,
+  X,
+  Layers,
+  Tag,
+  Flame,
+  Sparkles,
+  Star,
+  Zap,
+  ShoppingBag,
+} from "lucide-react"
 import { useCart, SelectedOption } from "@/components/cart/CartContext"
 
 export interface ItemOptionData {
@@ -28,6 +41,9 @@ export interface MenuItemData {
   originalPrice?: number | null
   image?: string | null
   isAvailable: boolean
+  isTopSeller?: boolean
+  isFeatured?: boolean
+  badge?: string | null
   optionGroups?: ItemOptionGroupData[]
 }
 
@@ -42,6 +58,10 @@ interface MenuBrowserProps {
   restaurantName: string
   branchId?: string
   categories: MenuCategoryData[]
+  bannerTitle?: string | null
+  bannerSubtitle?: string | null
+  bannerBadge?: string | null
+  bannerActive?: boolean
 }
 
 export function MobileMenuBrowser({
@@ -49,8 +69,12 @@ export function MobileMenuBrowser({
   restaurantName,
   branchId,
   categories,
+  bannerTitle,
+  bannerSubtitle,
+  bannerBadge,
+  bannerActive = true,
 }: MenuBrowserProps) {
-  const [activeCategory, setActiveCategory] = useState(categories[0]?.id || "")
+  const [activeCategory, setActiveCategory] = useState<string>("all")
   const { addItem, items, updateQuantity } = useCart()
   const [addedIds, setAddedIds] = useState<{ [key: string]: boolean }>({})
 
@@ -58,6 +82,19 @@ export function MobileMenuBrowser({
   const [selectedItemForCustomization, setSelectedItemForCustomization] = useState<MenuItemData | null>(null)
   const [selectedOptionsMap, setSelectedOptionsMap] = useState<{ [groupId: string]: string[] }>({})
   const [itemQuantity, setItemQuantity] = useState(1)
+
+  // Collect all available items
+  const allAvailableItems = categories.flatMap((cat) =>
+    (cat.items || []).filter((i) => i.isAvailable)
+  )
+
+  // Top Sellers: items marked isTopSeller
+  const topSellerItems = allAvailableItems.filter((i) => i.isTopSeller)
+
+  // Special Offers: items marked isFeatured or having originalPrice > price
+  const specialOfferItems = allAvailableItems.filter(
+    (i) => i.isFeatured || (i.originalPrice && i.originalPrice > i.price)
+  )
 
   const openCustomizationModal = (item: MenuItemData) => {
     setSelectedItemForCustomization(item)
@@ -89,7 +126,6 @@ export function MobileMenuBrowser({
       if (group.selectionType === "single") {
         return { ...prev, [group.id]: [optionId] }
       } else {
-        // multiple selection
         if (current.includes(optionId)) {
           return { ...prev, [group.id]: current.filter((id) => id !== optionId) }
         } else {
@@ -117,9 +153,8 @@ export function MobileMenuBrowser({
     if (!selectedItemForCustomization) return
     const item = selectedItemForCustomization
 
-    // Build selectedOptions array
     const selectedOptionsList: SelectedOption[] = []
-    let optionIdsKey: string[] = []
+    const optionIdsKey: string[] = []
 
     item.optionGroups?.forEach((group) => {
       const selectedIds = selectedOptionsMap[group.id] || []
@@ -139,8 +174,8 @@ export function MobileMenuBrowser({
     })
 
     const unitPrice = calculateCustomizedItemPrice(item)
-    // Unique ID for cart item depending on selected options
-    const uniqueCartId = optionIdsKey.length > 0 ? `${item.id}_${optionIdsKey.sort().join("_")}` : item.id
+    const uniqueCartId =
+      optionIdsKey.length > 0 ? `${item.id}_${optionIdsKey.sort().join("_")}` : item.id
 
     addItem(
       {
@@ -166,7 +201,6 @@ export function MobileMenuBrowser({
   }
 
   const handleAddItemDirectly = (item: MenuItemData) => {
-    // If item has option groups, open customization modal instead of adding directly
     if (item.optionGroups && item.optionGroups.length > 0) {
       openCustomizationModal(item)
       return
@@ -189,7 +223,6 @@ export function MobileMenuBrowser({
     }, 1200)
   }
 
-  // Helper to find total quantity in current cart for a menu item
   const getItemCartQty = (itemId: string) => {
     return items
       .filter((i) => i.menuItemId === itemId || i.id === itemId)
@@ -197,13 +230,394 @@ export function MobileMenuBrowser({
   }
 
   return (
-    <div className="space-y-5 pt-2">
-      {/* Category Tabs Bar */}
+    <div className="space-y-6 pt-2">
+      {/* 1. Promotional Hero Banner (Controlled by Owner / Call Center Manager) */}
+      {bannerActive && (bannerTitle || bannerSubtitle) && (
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#0B192C] via-slate-900 to-[var(--restaurant-primary,#2196F3)]/25 p-6 border border-[var(--restaurant-primary,#2196F3)]/30 shadow-2xl shadow-cyan-950/40">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[var(--restaurant-primary,#2196F3)]/20 via-transparent to-transparent opacity-70"></div>
+          <div className="relative z-10 space-y-2.5">
+            {bannerBadge && (
+              <span
+                style={{ backgroundColor: "var(--restaurant-primary, #2196F3)" }}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black text-white uppercase tracking-wider shadow-lg"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {bannerBadge}
+              </span>
+            )}
+            {bannerTitle && (
+              <h2 className="text-xl font-black text-white leading-tight">
+                {bannerTitle}
+              </h2>
+            )}
+            {bannerSubtitle && (
+              <p className="text-xs text-slate-300 leading-relaxed font-normal">
+                {bannerSubtitle}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2. Special Offers & Hot Deals Showcase (بطاقات العروض والتخفيضات 🏷️) */}
+      {specialOfferItems.length > 0 && (
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-black text-white flex items-center gap-2">
+              <span className="p-1 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                <Tag className="w-3.5 h-3.5" />
+              </span>
+              عروض وتخفيضات خاصة 🔥
+            </h3>
+            <span className="text-[11px] text-rose-400 font-bold">
+              {specialOfferItems.length} عروض متاحة
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {specialOfferItems.map((item) => {
+              const cartQty = getItemCartQty(item.id)
+              const isRecentlyAdded = addedIds[item.id]
+              const hasOptions = item.optionGroups && item.optionGroups.length > 0
+              const discountPct =
+                item.originalPrice && item.originalPrice > item.price
+                  ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)
+                  : null
+
+              return (
+                <div
+                  key={`offer_${item.id}`}
+                  onClick={() => hasOptions && openCustomizationModal(item)}
+                  className={`relative bg-gradient-to-br from-slate-900/95 via-slate-900 to-rose-950/20 border border-rose-500/30 hover:border-rose-500/60 rounded-3xl p-4 shadow-xl backdrop-blur-md transition-all group flex flex-col justify-between ${
+                    hasOptions ? "cursor-pointer" : ""
+                  }`}
+                >
+                  {/* Top Badge Ribbon */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-md flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      {item.badge || (discountPct ? `خصم ${discountPct}% 🔥` : "عرض حصري")}
+                    </span>
+
+                    <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-amber-400 fill-amber-400" /> متاح الآن
+                    </span>
+                  </div>
+
+                  <div className="flex gap-3.5 items-center mb-3">
+                    {/* Item Image */}
+                    <div className="w-20 h-20 rounded-2xl bg-slate-950 overflow-hidden relative shrink-0 border border-slate-800 shadow-md">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-600 bg-slate-950">
+                          <Utensils className="w-7 h-7" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <h4 className="font-extrabold text-sm text-white truncate">{item.name}</h4>
+                      <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
+                        {item.description || "عرض خاص ومميز لفترة محدودة"}
+                      </p>
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="text-sm font-black text-rose-400">{item.price} ج.م</span>
+                        {item.originalPrice && item.originalPrice > item.price && (
+                          <span className="text-xs text-slate-500 line-through">
+                            {item.originalPrice} ج.م
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Add Button */}
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-400">
+                      {hasOptions ? "أحجام وإضافات متنوعة" : "توصيل سريع"}
+                    </span>
+
+                    {cartQty > 0 && !hasOptions ? (
+                      <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 p-1 rounded-2xl">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            updateQuantity(item.id, -1)
+                          }}
+                          className="w-7 h-7 rounded-xl bg-slate-800 text-white flex items-center justify-center"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="w-5 text-center text-xs font-black text-white">
+                          {cartQty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            updateQuantity(item.id, 1)
+                          }}
+                          className="w-7 h-7 rounded-xl bg-rose-500 text-white flex items-center justify-center font-bold"
+                        >
+                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleAddItemDirectly(item)
+                        }}
+                        className={`px-3.5 py-1.5 rounded-2xl text-xs font-black flex items-center gap-1.5 shadow-lg transition-all cursor-pointer text-white ${
+                          isRecentlyAdded
+                            ? "bg-emerald-500"
+                            : "bg-rose-500 hover:bg-rose-600 active:scale-95"
+                        }`}
+                      >
+                        {isRecentlyAdded ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>تمت الإضافة</span>
+                          </>
+                        ) : hasOptions ? (
+                          <>
+                            <Layers className="w-3.5 h-3.5" />
+                            <span>اختر الحجم</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>أضف للعربة</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Top Sellers Section (قسم الأكثر طلباً ومبيعاً 🔥) */}
+      {topSellerItems.length > 0 && (
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-black text-white flex items-center gap-2">
+              <span className="p-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              </span>
+              الأكثر طلباً ومبيعاً 🔥
+            </h3>
+            <span className="text-[11px] text-amber-400 font-bold">
+              اختيارات العملاء المفضلة
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {topSellerItems.map((item) => {
+              const cartQty = getItemCartQty(item.id)
+              const isRecentlyAdded = addedIds[item.id]
+              const hasOptions = item.optionGroups && item.optionGroups.length > 0
+
+              const sizeOptions =
+                item.optionGroups?.flatMap((g) => g.options).map((o) => o.name) || []
+
+              return (
+                <div
+                  key={`top_${item.id}`}
+                  onClick={() => hasOptions && openCustomizationModal(item)}
+                  className={`relative bg-gradient-to-br from-slate-900/95 via-slate-900 to-amber-950/20 border border-amber-500/40 hover:border-amber-500/70 rounded-3xl p-4 shadow-xl backdrop-blur-md transition-all group flex flex-col justify-between ${
+                    hasOptions ? "cursor-pointer" : ""
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2.5">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 shadow-md flex items-center gap-1">
+                      <Flame className="w-3 h-3 fill-slate-950" />
+                      {item.badge || "الأكثر طلباً 🔥"}
+                    </span>
+
+                    <span className="flex items-center gap-1 text-[11px] font-black text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> 4.9
+                    </span>
+                  </div>
+
+                  <div className="flex gap-3.5 items-center mb-3">
+                    <div className="w-20 h-20 rounded-2xl bg-slate-950 overflow-hidden relative shrink-0 border border-slate-800 shadow-md">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-600 bg-slate-950">
+                          <Utensils className="w-7 h-7" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <h4 className="font-extrabold text-sm text-white truncate">{item.name}</h4>
+                      <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
+                        {item.description || "طبق مميز يفضله غالبية زوار المطعم"}
+                      </p>
+
+                      {sizeOptions.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {sizeOptions.slice(0, 3).map((sizeName, idx) => (
+                            <span
+                              key={idx}
+                              className="px-1.5 py-0.5 text-[9px] font-bold rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                            >
+                              {sizeName}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="pt-1">
+                        <span className="text-xs font-black text-amber-400">
+                          {hasOptions ? `تبدأ من ${item.price} ج.م` : `${item.price} ج.م`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      {hasOptions ? "تخصيص الخيارات متاح" : "جاهز للتوصيل السريع"}
+                    </span>
+
+                    {cartQty > 0 && !hasOptions ? (
+                      <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 p-1 rounded-2xl">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            updateQuantity(item.id, -1)
+                          }}
+                          className="w-7 h-7 rounded-xl bg-slate-800 text-white flex items-center justify-center"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="w-5 text-center text-xs font-black text-white">
+                          {cartQty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            updateQuantity(item.id, 1)
+                          }}
+                          className="w-7 h-7 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold"
+                        >
+                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleAddItemDirectly(item)
+                        }}
+                        className={`px-3.5 py-1.5 rounded-2xl text-xs font-black flex items-center gap-1.5 shadow-lg transition-all cursor-pointer ${
+                          isRecentlyAdded
+                            ? "bg-emerald-500 text-white"
+                            : "bg-amber-400 hover:bg-amber-300 text-slate-950 active:scale-95"
+                        }`}
+                      >
+                        {isRecentlyAdded ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>تمت الإضافة</span>
+                          </>
+                        ) : hasOptions ? (
+                          <>
+                            <Layers className="w-3.5 h-3.5" />
+                            <span>اختر الحجم</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>أضف للطلب</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 4. Category Tabs Bar & Quick Filters */}
       <div className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-1 border-b border-slate-800/80 flex gap-2.5 overflow-x-auto no-scrollbar">
+        <button
+          type="button"
+          onClick={() => setActiveCategory("all")}
+          style={
+            activeCategory === "all"
+              ? {
+                  backgroundColor: "var(--restaurant-primary, #2196F3)",
+                  color: "#ffffff",
+                }
+              : {}
+          }
+          className={`px-4 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
+            activeCategory === "all"
+              ? "shadow-lg shadow-[var(--restaurant-primary)]/20 scale-105"
+              : "bg-slate-900 text-slate-300 hover:text-white border border-slate-800"
+          }`}
+        >
+          🌟 الكل ({allAvailableItems.length})
+        </button>
+
+        {specialOfferItems.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setActiveCategory("special_offers")}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
+              activeCategory === "special_offers"
+                ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20 scale-105"
+                : "bg-slate-900 text-rose-300 hover:text-white border border-rose-500/30"
+            }`}
+          >
+            🏷️ العروض ({specialOfferItems.length})
+          </button>
+        )}
+
+        {topSellerItems.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setActiveCategory("top_sellers")}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
+              activeCategory === "top_sellers"
+                ? "bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20 scale-105"
+                : "bg-slate-900 text-amber-300 hover:text-white border border-amber-500/30"
+            }`}
+          >
+            🔥 الأكثر طلباً ({topSellerItems.length})
+          </button>
+        )}
+
         {categories.map((cat) => {
           const isActive = activeCategory === cat.id
           const availableCount = cat.items?.filter((i) => i.isAvailable)?.length || 0
-
           if (availableCount === 0) return null
 
           return (
@@ -231,10 +645,12 @@ export function MobileMenuBrowser({
         })}
       </div>
 
-      {/* Category Food Items Cards Grid */}
+      {/* 5. Food Items Cards Grid */}
       <div className="space-y-6">
         {categories.map((cat) => {
-          if (activeCategory && cat.id !== activeCategory) return null
+          if (activeCategory === "top_sellers") return null
+          if (activeCategory === "special_offers") return null
+          if (activeCategory !== "all" && cat.id !== activeCategory) return null
 
           const availableItems = cat.items?.filter((i) => i.isAvailable) || []
           if (availableItems.length === 0) return null
@@ -260,10 +676,8 @@ export function MobileMenuBrowser({
                   const isRecentlyAdded = addedIds[item.id]
                   const hasOptions = item.optionGroups && item.optionGroups.length > 0
 
-                  // Extract size/portion badges (e.g., ثُمُن, رُبُع, نِصْف, كِيلو)
-                  const sizeOptions = item.optionGroups
-                    ?.flatMap((g) => g.options)
-                    .map((o) => o.name) || []
+                  const sizeOptions =
+                    item.optionGroups?.flatMap((g) => g.options).map((o) => o.name) || []
 
                   return (
                     <div
@@ -287,18 +701,30 @@ export function MobileMenuBrowser({
                             <Utensils className="w-7 h-7" />
                           </div>
                         )}
+
+                        {item.isTopSeller && (
+                          <span className="absolute top-1 right-1 bg-amber-400 text-slate-950 text-[8px] font-black px-1 rounded-md">
+                            🔥
+                          </span>
+                        )}
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0 space-y-1">
-                        <h4 className="font-extrabold text-sm text-white truncate" style={{ color: "#ffffff" }}>
-                          {item.name}
-                        </h4>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="font-extrabold text-sm text-white truncate">{item.name}</h4>
+                          {item.badge && (
+                            <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+
                         <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
                           {item.description || "طبق شهي طازج يجهز بعناية فائقة"}
                         </p>
 
-                        {/* Portion & Size Badges (ثُمُن، رُبُع، نِصْف، كِيلو، إلخ) */}
+                        {/* Portion & Size Badges */}
                         {sizeOptions.length > 0 && (
                           <div className="flex flex-wrap gap-1 pt-1">
                             {sizeOptions.slice(0, 4).map((sizeName, idx) => (
@@ -377,7 +803,10 @@ export function MobileMenuBrowser({
                             style={
                               isRecentlyAdded
                                 ? { backgroundColor: "#22C55E", color: "#ffffff" }
-                                : { backgroundColor: "var(--restaurant-primary, #f37f20)", color: "#ffffff" }
+                                : {
+                                    backgroundColor: "var(--restaurant-primary, #f37f20)",
+                                    color: "#ffffff",
+                                  }
                             }
                             className="px-3 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-lg cursor-pointer hover:brightness-110 active:scale-95 text-white"
                           >

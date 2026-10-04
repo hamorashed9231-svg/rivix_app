@@ -99,6 +99,7 @@ export default function HomeScreen() {
     const defaultTabs = [
       { id: 'ALL', name: language === 'ar' ? 'الكل' : 'All' },
       { id: 'OFFERS', name: language === 'ar' ? '🏷️ العروض' : '🏷️ Offers' },
+      { id: 'TOP_SELLERS', name: language === 'ar' ? '🔥 الأكثر طلباً' : '🔥 Best Sellers' },
     ];
 
     if (restaurant?.categories && restaurant.categories.length > 0) {
@@ -117,13 +118,16 @@ export default function HomeScreen() {
     ];
   }, [restaurant?.categories, rawItems, language]);
 
-  // Filter items by category or OFFERS
+  // Filter items by category or OFFERS or TOP_SELLERS
   const filteredItems = useMemo(() => {
     if (selectedCategory === 'ALL') return rawItems;
     if (selectedCategory === 'OFFERS') {
       return rawItems.filter(
-        (item) => item.originalPrice && item.originalPrice > item.price
+        (item) => item.isFeatured || (item.originalPrice && item.originalPrice > item.price)
       );
+    }
+    if (selectedCategory === 'TOP_SELLERS') {
+      return rawItems.filter((item) => item.isTopSeller);
     }
     return rawItems.filter(
       (item) => item.category === selectedCategory || item.categoryId === selectedCategory
@@ -194,6 +198,16 @@ export default function HomeScreen() {
               </Text>
             </View>
           ) : null}
+
+          {item.badge && isAvailable ? (
+            <View style={[styles.itemCustomBadge, isRTL ? { left: 6 } : { right: 6 }]}>
+              <Text style={styles.itemCustomBadgeText}>{item.badge}</Text>
+            </View>
+          ) : item.isTopSeller && isAvailable ? (
+            <View style={[styles.itemCustomBadge, isRTL ? { left: 6 } : { right: 6 }, { backgroundColor: '#F59E0B' }]}>
+              <Text style={styles.itemCustomBadgeText}>🔥 {language === 'ar' ? 'الأكثر طلباً' : 'Top Seller'}</Text>
+            </View>
+          ) : null}
         </View>
 
         {/* Item Information */}
@@ -230,12 +244,18 @@ export default function HomeScreen() {
                 ]}
                 onPress={(e) => {
                   e.stopPropagation();
-                  addItem(item);
+                  if (item.optionGroups && item.optionGroups.length > 0) {
+                    setSelectedItemForDetail(item);
+                  } else {
+                    addItem(item);
+                  }
                 }}
                 activeOpacity={0.8}
               >
                 <Text style={styles.addButtonText}>
-                  {currentQty > 0 ? `+ (${currentQty})` : `+ ${t('addToCart')}`}
+                  {item.optionGroups && item.optionGroups.length > 0
+                    ? (language === 'ar' ? 'اختر' : 'Options')
+                    : (currentQty > 0 ? `+ (${currentQty})` : `+ ${t('addToCart')}`)}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -259,7 +279,9 @@ export default function HomeScreen() {
       <View style={[styles.header, { backgroundColor: primaryColor, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <View style={[styles.headerRight, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           {restaurant?.logo ? (
-            <Image source={{ uri: restaurant.logo }} style={styles.headerLogo} resizeMode="contain" />
+            <View style={styles.headerLogoContainer}>
+              <Image source={{ uri: restaurant.logo }} style={styles.headerLogoImage} resizeMode="contain" />
+            </View>
           ) : (
             <View style={styles.headerLogoPlaceholder}>
               <Text style={[styles.headerLogoText, { color: primaryColor }]}>
@@ -314,6 +336,27 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Promotional Hero Banner Controlled by Owner / Call Center Manager */}
+      {restaurant?.bannerActive !== false && (restaurant?.bannerTitle || restaurant?.bannerSubtitle) ? (
+        <View style={styles.promoBannerContainer}>
+          {restaurant?.bannerBadge ? (
+            <View style={[styles.promoBannerBadge, { backgroundColor: primaryColor }]}>
+              <Text style={styles.promoBannerBadgeText}>{restaurant.bannerBadge}</Text>
+            </View>
+          ) : null}
+          {restaurant?.bannerTitle ? (
+            <Text style={[styles.promoBannerTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {restaurant.bannerTitle}
+            </Text>
+          ) : null}
+          {restaurant?.bannerSubtitle ? (
+            <Text style={[styles.promoBannerSubtitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {restaurant.bannerSubtitle}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
 
       {/* Coupon Entry Banner */}
       <TouchableOpacity
@@ -522,16 +565,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  headerLogo: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  headerLogoContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
+    padding: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  headerLogoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
   },
   headerLogoPlaceholder: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -924,6 +980,62 @@ const styles = StyleSheet.create({
   couponModalSubmitText: {
     color: '#FFFFFF',
     fontSize: 15,
+    fontWeight: 'bold',
+  },
+  promoBannerContainer: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 6,
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  promoBannerBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  promoBannerBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  promoBannerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  promoBannerSubtitle: {
+    fontSize: 12,
+    color: '#94A3B8',
+    lineHeight: 18,
+  },
+  itemCustomBadge: {
+    position: 'absolute',
+    bottom: 6,
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  itemCustomBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
     fontWeight: 'bold',
   },
 });

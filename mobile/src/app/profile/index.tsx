@@ -83,7 +83,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={[styles.menuRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
-            onPress={() => router.push('/support')}
+            onPress={() => router.push('/support' as any)}
           >
             <Text style={styles.menuIcon}>💬</Text>
             <Text style={[styles.menuTitle, { textAlign: isRTL ? 'right' : 'left' }]}>

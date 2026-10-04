@@ -226,8 +226,8 @@ export function StaffManagementClient({
               onChange={(e) => setStaffRole(e.target.value as "manager" | "staff")}
               className="w-full rounded-xl bg-brand-gray-900 border border-brand-gray-800 px-3 py-2.5 text-xs text-brand-white outline-none focus:border-brand-sky transition-all"
             >
-              <option value="staff">موظف (Staff) — الطلبات فقط</option>
-              <option value="manager">مدير (Manager) — إدارة شاملة</option>
+              <option value="manager">مدير كول سنتر (Call Center Manager) — تحكم بالطلبات والمنيو والواجهة</option>
+              <option value="staff">موظف كول سنتر (Call Center Agent) — متابعة واستقبال الطلبات والعملاء</option>
             </select>
           </div>
 
@@ -289,11 +289,11 @@ export function StaffManagementClient({
                         <td className="p-4">
                           {staff.staffRole === "manager" ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-300 font-bold text-[11px]">
-                              <ShieldCheck className="w-3.5 h-3.5" /> مدير مطعم (Manager)
+                              <ShieldCheck className="w-3.5 h-3.5" /> مدير كول سنتر (Manager)
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-sky/10 border border-brand-sky/30 text-brand-sky font-bold text-[11px]">
-                              <UserCheck className="w-3.5 h-3.5" /> موظف (Staff)
+                              <UserCheck className="w-3.5 h-3.5" /> موظف كول سنتر (Agent)
                             </span>
                           )}
                         </td>

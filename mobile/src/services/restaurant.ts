@@ -11,6 +11,9 @@ export interface MenuItem {
   category?: string;
   categoryId?: string;
   isAvailable?: boolean;
+  isTopSeller?: boolean;
+  isFeatured?: boolean;
+  badge?: string;
   optionGroups?: any[];
 }
 
@@ -25,9 +28,14 @@ export interface RestaurantData {
   name: string;
   slug: string;
   logo?: string;
+  coverImage?: string;
   primaryColor: string;
   secondaryColor: string;
   description?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  bannerBadge?: string;
+  bannerActive?: boolean;
   phone?: string;
   address?: string;
   menu?: MenuItem[];

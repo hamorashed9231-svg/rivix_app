@@ -1,11 +1,13 @@
 import { MenuItem } from '@/services/restaurant';
 
 export interface CartItem {
+  id?: string;
   menuItemId: string;
   name: string;
   price: number;
   quantity: number;
   image?: string;
+  notes?: string;
 }
 
 export function addCartItem(prevItems: CartItem[], item: MenuItem): CartItem[] {

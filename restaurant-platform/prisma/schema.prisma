@@ -122,6 +122,10 @@ model Restaurant {
   secondaryColor String           @default("#0A1A3C")
   status         RestaurantStatus @default(pending)
   commissionRate Float            @default(0.0)
+  bannerTitle    String?
+  bannerSubtitle String?
+  bannerBadge    String?
+  bannerActive   Boolean          @default(true)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
@@ -205,6 +209,9 @@ model MenuItem {
   originalPrice Float?
   image         String?
   isAvailable   Boolean      @default(true)
+  isTopSeller   Boolean      @default(false)
+  isFeatured    Boolean      @default(false)
+  badge         String?
 
   orderItems      OrderItem[]
   branchItems     BranchMenuItem[]

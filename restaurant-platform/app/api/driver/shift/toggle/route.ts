@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       }
 
       // Geofence check: 200m radius threshold
-      if (coords && typeof coords.lat === "number" && typeof coords.lng === "number") {
+      if (coords && typeof coords.lat === "number" && typeof coords.lng === "number" && branch.lat != null && branch.lng != null) {
         const distance = calculateDistanceMeters(coords.lat, coords.lng, branch.lat, branch.lng)
         if (distance > 200) {
           return NextResponse.json(

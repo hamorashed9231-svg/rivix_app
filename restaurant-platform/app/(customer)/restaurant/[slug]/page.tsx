@@ -108,16 +108,16 @@ export default async function CustomerRestaurantBySlugPage({
       {/* Restaurant Header Info Card */}
       <div className="px-4 -mt-14 relative z-10 space-y-4">
         <div className="flex justify-between items-end">
-          <div className="w-24 h-24 rounded-3xl bg-[var(--restaurant-secondary)] border-4 border-[var(--restaurant-primary)] p-1.5 shadow-2xl overflow-hidden relative">
+          <div className="w-24 h-24 rounded-2xl bg-white border-4 border-[var(--restaurant-primary)] p-1 shadow-2xl overflow-hidden relative flex items-center justify-center">
             {restaurant.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={restaurant.logo}
                 alt={restaurant.name}
-                className="w-full h-full object-cover rounded-2xl"
+                className="w-full h-full object-contain rounded-xl"
               />
             ) : (
-              <div className="w-full h-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-2xl font-bold rounded-2xl">
+              <div className="w-full h-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-2xl font-bold rounded-xl">
                 {restaurant.name.charAt(0)}
               </div>
             )}
@@ -174,6 +174,10 @@ export default async function CustomerRestaurantBySlugPage({
             restaurantName={restaurant.name}
             branchId={defaultBranch?.id}
             categories={availableCategories}
+            bannerTitle={restaurant.bannerTitle}
+            bannerSubtitle={restaurant.bannerSubtitle}
+            bannerBadge={restaurant.bannerBadge}
+            bannerActive={restaurant.bannerActive}
           />
         ) : (
           <div className="rounded-2xl bg-slate-900/60 border border-slate-800 p-10 text-center space-y-3 shadow-lg">

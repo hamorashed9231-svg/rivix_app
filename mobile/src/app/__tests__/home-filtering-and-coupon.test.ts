@@ -28,7 +28,7 @@ describe('Home Category Filtering & Offers Logic Unit Tests', () => {
 
   it('enriches rawItems with category name and categoryId from categories array', () => {
     const rawItems: MenuItem[] = mockCategories.flatMap((cat) =>
-      cat.items.map((item) => ({
+      cat.items.map((item: any) => ({
         ...item,
         category: item.category || cat.name,
         categoryId: (item as any).categoryId || cat.id,
@@ -43,7 +43,7 @@ describe('Home Category Filtering & Offers Logic Unit Tests', () => {
 
   it('filters correctly by category tab ("الشوربة", "مشويات الطيور", "المحاشي")', () => {
     const rawItems: MenuItem[] = mockCategories.flatMap((cat) =>
-      cat.items.map((item) => ({
+      cat.items.map((item: any) => ({
         ...item,
         category: item.category || cat.name,
         categoryId: (item as any).categoryId || cat.id,
@@ -65,7 +65,7 @@ describe('Home Category Filtering & Offers Logic Unit Tests', () => {
 
   it('filters OFFERS tab to only items where originalPrice > price', () => {
     const rawItems: MenuItem[] = mockCategories.flatMap((cat) =>
-      cat.items.map((item) => ({
+      cat.items.map((item: any) => ({
         ...item,
         category: item.category || cat.name,
         categoryId: (item as any).categoryId || cat.id,
