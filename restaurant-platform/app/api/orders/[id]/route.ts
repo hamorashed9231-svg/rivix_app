@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, getRestaurantAccess } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 // GET Single Order Details
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(req)
     if (!user) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
     }
@@ -29,6 +29,20 @@ export async function GET(
       return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 })
     }
 
+    // Verify ownership or staff/rider access (prevent IDOR)
+    const isOwnerCustomer = order.customerId === user.id
+    const isAssignedRider = order.riderId === user.id
+    const isAdmin = user.role === "admin" || user.role === "control" || user.role === "supermarket_control"
+    let hasRestaurantAccess = false
+    if (!isOwnerCustomer && !isAssignedRider && !isAdmin && order.branch?.restaurantId) {
+      const access = await getRestaurantAccess(user.id, order.branch.restaurantId)
+      hasRestaurantAccess = !!access
+    }
+
+    if (!isOwnerCustomer && !isAssignedRider && !isAdmin && !hasRestaurantAccess) {
+      return NextResponse.json({ error: "غير مصرح لك بعرض هذا الطلب" }, { status: 403 })
+    }
+
     return NextResponse.json({ order })
   } catch (error) {
     return NextResponse.json({ error: "حدث خطأ أثناء جلب تفاصيل الطلب" }, { status: 500 })
@@ -41,12 +55,26 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
-    if (!user || (user.role !== "restaurant_owner" && user.role !== "admin")) {
-      return NextResponse.json({ error: "غير مصرح لك بتعديل الطلبات" }, { status: 403 })
+    const user = await getCurrentUser(req)
+    if (!user) {
+      return NextResponse.json({ error: "غير مصرح لك بتعديل الطلبات" }, { status: 401 })
     }
 
     const { id } = await params
+    const existingOrder = await prisma.order.findUnique({
+      where: { id },
+      select: { branch: { select: { restaurantId: true } } },
+    })
+
+    if (!existingOrder || !existingOrder.branch) {
+      return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 })
+    }
+
+    const access = await getRestaurantAccess(user.id, existingOrder.branch.restaurantId)
+    if (access !== "owner" && access !== "manager" && user.role !== "admin") {
+      return NextResponse.json({ error: "غير مصرح لك بتعديل الطلبات" }, { status: 403 })
+    }
+
     const body = await req.json()
     const { items, totalPrice } = body
 
@@ -64,8 +92,8 @@ export async function PUT(
         data: items.map((item: any) => ({
           orderId: id,
           menuItemId: item.menuItemId || item.id,
-          quantity: item.quantity,
-          price: parseFloat(item.price),
+          quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)),
+          price: Math.max(0, parseFloat(item.price) || 0),
           notes: item.notes || null,
         })),
       })
@@ -74,7 +102,7 @@ export async function PUT(
       await tx.order.update({
         where: { id },
         data: {
-          totalPrice: parseFloat(totalPrice),
+          totalPrice: Math.max(0, parseFloat(totalPrice) || 0),
         },
       })
     })
@@ -102,16 +130,30 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
-    if (!user || (user.role !== "restaurant_owner" && user.role !== "admin")) {
-      return NextResponse.json({ error: "غير مصرح لك بحذف الطلبات" }, { status: 403 })
+    const user = await getCurrentUser(req)
+    if (!user) {
+      return NextResponse.json({ error: "غير مصرح لك بحذف الطلبات" }, { status: 401 })
     }
 
     const { id } = await params
+    const existingOrder = await prisma.order.findUnique({
+      where: { id },
+      select: { branch: { select: { restaurantId: true } } },
+    })
 
-    // Delete order items first then order
-    await prisma.orderItem.deleteMany({ where: { orderId: id } })
-    await prisma.order.delete({ where: { id } })
+    if (!existingOrder || !existingOrder.branch) {
+      return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 })
+    }
+
+    const access = await getRestaurantAccess(user.id, existingOrder.branch.restaurantId)
+    if (access !== "owner" && user.role !== "admin") {
+      return NextResponse.json({ error: "غير مصرح لك بحذف الطلبات" }, { status: 403 })
+    }
+
+    await prisma.$transaction([
+      prisma.orderItem.deleteMany({ where: { orderId: id } }),
+      prisma.order.delete({ where: { id } }),
+    ])
 
     return NextResponse.json({ message: "تم حذف الطلب بنجاح" })
   } catch (error) {

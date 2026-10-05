@@ -193,7 +193,7 @@ export default function OrderTrackingScreen() {
                   </Text>
                   {item.selectedOptions && item.selectedOptions.length > 0 && (
                     <Text style={[styles.itemOptionsText, { textAlign: isRTL ? 'right' : 'left' }]}>
-                      {item.selectedOptions.map((opt: any) => opt.name).join(' • ')}
+                      {item.selectedOptions.map((opt: any) => opt.optionName || opt.name).filter(Boolean).join(' • ')}
                     </Text>
                   )}
                   {item.notes ? (

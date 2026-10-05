@@ -17,8 +17,7 @@ import { useRouter } from 'expo-router';
 import { useRestaurant } from '@/context/RestaurantContext';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import axios from 'axios';
-import Constants from 'expo-constants';
+import { api } from '@/services/api';
 
 interface ActiveComplaint {
   id: string;
@@ -50,9 +49,6 @@ export default function CustomerSupportScreen() {
 
   const [loading, setLoading] = useState(false);
 
-  const apiBaseUrl =
-    Constants.expoConfig?.extra?.apiBaseUrl || 'https://restaurant-platform-ecru.vercel.app';
-
   const checkActiveComplaintStatus = async () => {
     if (!user?.id || !restaurant?.slug) {
       setCheckingLock(false);
@@ -60,9 +56,8 @@ export default function CustomerSupportScreen() {
     }
 
     try {
-      const res = await axios.get(`${apiBaseUrl}/api/customer/messages/active`, {
-        params: { restaurantSlug: restaurant.slug },
-        headers: { 'x-user-id': user.id },
+      const res = await api.get('/api/customer/messages/active', {
+        params: { restaurantSlug: restaurant.slug, restaurantId: restaurant.id },
       });
 
       if (res.data) {
@@ -101,12 +96,7 @@ export default function CustomerSupportScreen() {
         imageUrl: imageUrl.trim() || undefined,
       };
 
-      const res = await axios.post(`${apiBaseUrl}/api/customer/messages`, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(user?.id ? { 'x-user-id': user.id } : {}),
-        },
-      });
+      const res = await api.post('/api/customer/messages', payload);
 
       if (res.data?.success) {
         setSubject('');

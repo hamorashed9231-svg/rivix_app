@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function POST(req: Request) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(req)
 
     if (!user) {
       return NextResponse.json({ error: "غير مصرح - يرجى تسجيل الدخول" }, { status: 401 })

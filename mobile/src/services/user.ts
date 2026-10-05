@@ -10,6 +10,8 @@ export interface UserAddress {
   buildingNumber?: string | null;
   floor?: string | null;
   apartment?: string | null;
+  landmark?: string | null;
+  phone?: string | null;
 }
 
 export interface UserProfile {
@@ -32,14 +34,16 @@ export const fetchUserAddresses = async (): Promise<UserAddress[]> => {
 
 // Add new user address
 export const addUserAddress = async (addressData: {
-  label: string;
-  details: string;
+  label?: string;
+  details?: string;
   lat: number;
   lng: number;
   streetName?: string;
   buildingNumber?: string;
   floor?: string;
   apartment?: string;
+  landmark?: string;
+  phone?: string;
 }): Promise<UserAddress | null> => {
   try {
     const response = await api.post('/api/customer/addresses', addressData);
@@ -47,5 +51,16 @@ export const addUserAddress = async (addressData: {
   } catch (error) {
     console.error('Error adding user address:', error);
     return null;
+  }
+};
+
+// Delete user address
+export const deleteUserAddress = async (id: string): Promise<boolean> => {
+  try {
+    await api.delete(`/api/customer/addresses?id=${encodeURIComponent(id)}`);
+    return true;
+  } catch (error) {
+    console.error('Error deleting user address:', error);
+    return false;
   }
 };

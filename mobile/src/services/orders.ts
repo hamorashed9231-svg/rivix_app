@@ -75,10 +75,23 @@ export const submitOrderReview = async (payload: {
 // Create a new customer order
 export const createCustomerOrder = async (orderData: {
   restaurantId: string;
-  items: Array<{ id: string; menuItemId?: string; quantity: number; price: number; notes?: string }>;
+  items: Array<{
+    id: string;
+    menuItemId?: string;
+    quantity: number;
+    price: number;
+    notes?: string;
+    selectedOptions?: any[];
+  }>;
   totalPrice: number;
   deliveryAddressId?: string;
-  deliveryAddressDetails?: string;
+  deliveryAddressDetails?: string | null;
+  streetName?: string | null;
+  buildingNumber?: string | null;
+  floor?: string | null;
+  apartment?: string | null;
+  landmark?: string | null;
+  phone?: string | null;
   customerLat?: number;
   customerLng?: number;
   paymentMethod?: string;

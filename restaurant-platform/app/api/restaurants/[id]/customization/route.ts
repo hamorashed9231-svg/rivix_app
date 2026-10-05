@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { id: restaurantId } = await params
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(request)
 
     if (!user) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
@@ -77,7 +77,7 @@ export async function PATCH(
 ) {
   try {
     const { id: restaurantId } = await params
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(request)
 
     if (!user) {
       return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
@@ -92,22 +92,24 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { banner, itemUpdates } = body
+    const { banner, itemUpdates, notifyCustomers, notificationTitle, notificationBody } = body
 
     // 1. Update Restaurant Banner if provided
-    if (banner) {
-      await prisma.restaurant.update({
-        where: { id: restaurantId },
-        data: {
-          bannerTitle: banner.bannerTitle !== undefined ? banner.bannerTitle : undefined,
-          bannerSubtitle: banner.bannerSubtitle !== undefined ? banner.bannerSubtitle : undefined,
-          bannerBadge: banner.bannerBadge !== undefined ? banner.bannerBadge : undefined,
-          bannerActive: banner.bannerActive !== undefined ? Boolean(banner.bannerActive) : undefined,
-        },
-      })
-    }
+    const updatedRestaurant = await prisma.restaurant.update({
+      where: { id: restaurantId },
+      data: banner
+        ? {
+            bannerTitle: banner.bannerTitle !== undefined ? banner.bannerTitle : undefined,
+            bannerSubtitle: banner.bannerSubtitle !== undefined ? banner.bannerSubtitle : undefined,
+            bannerBadge: banner.bannerBadge !== undefined ? banner.bannerBadge : undefined,
+            bannerActive: banner.bannerActive !== undefined ? Boolean(banner.bannerActive) : undefined,
+          }
+        : {},
+      select: { id: true, name: true, bannerTitle: true, bannerSubtitle: true, bannerBadge: true },
+    })
 
-    // 2. Update Menu Items (isTopSeller, isFeatured, badge, originalPrice) if provided
+    // 2. Update Menu Items (price, isTopSeller, isFeatured, badge, originalPrice) if provided
+    let newlyOfferedItems: string[] = []
     if (Array.isArray(itemUpdates) && itemUpdates.length > 0) {
       for (const update of itemUpdates) {
         if (!update.id) continue
@@ -123,11 +125,24 @@ export async function PATCH(
         }
 
         const dataToUpdate: any = {}
+        if (update.price !== undefined && update.price !== null && !isNaN(parseFloat(update.price))) {
+          dataToUpdate.price = parseFloat(update.price)
+        }
         if (update.isTopSeller !== undefined) dataToUpdate.isTopSeller = Boolean(update.isTopSeller)
         if (update.isFeatured !== undefined) dataToUpdate.isFeatured = Boolean(update.isFeatured)
         if (update.badge !== undefined) dataToUpdate.badge = update.badge ? String(update.badge).trim() : null
         if (update.originalPrice !== undefined) {
           dataToUpdate.originalPrice = update.originalPrice ? parseFloat(update.originalPrice) : null
+        }
+
+        const wasOffer = Boolean(item.isFeatured || (item.originalPrice && item.originalPrice > item.price))
+        const isNowOffer = Boolean(
+          dataToUpdate.isFeatured ||
+            (dataToUpdate.originalPrice && dataToUpdate.originalPrice > (dataToUpdate.price ?? item.price))
+        )
+
+        if (isNowOffer && (!wasOffer || dataToUpdate.price !== item.price || dataToUpdate.originalPrice !== item.originalPrice)) {
+          newlyOfferedItems.push(item.name)
         }
 
         await prisma.menuItem.update({
@@ -137,9 +152,37 @@ export async function PATCH(
       }
     }
 
+    // 3. Broadcast push notification to all app users if requested or when new offers are added
+    if (notifyCustomers || newlyOfferedItems.length > 0) {
+      const { broadcastPromoNotification } = await import("@/lib/promo-notifications")
+      const title =
+        notificationTitle && String(notificationTitle).trim()
+          ? String(notificationTitle).trim()
+          : banner?.bannerBadge
+          ? `🔥 ${banner.bannerBadge} من ${updatedRestaurant.name}!`
+          : `🎉 عروض وخصومات جديدة من ${updatedRestaurant.name}!`
+
+      const msgBody =
+        notificationBody && String(notificationBody).trim()
+          ? String(notificationBody).trim()
+          : newlyOfferedItems.length > 0
+          ? `عروض وخصومات حصرية الآن على: ${newlyOfferedItems.slice(0, 3).join("، ")}! اطلب الآن من المنيو 🔥`
+          : banner?.bannerTitle
+          ? `${banner.bannerTitle}${banner.bannerSubtitle ? ` — ${banner.bannerSubtitle}` : ""}`
+          : `تصفح أحدث العروض والأصناف الأكثر مبيعاً في منيو ${updatedRestaurant.name} الآن!`
+
+      await broadcastPromoNotification({
+        restaurantId,
+        title,
+        body: msgBody,
+        type: "offer",
+        createdById: user.id,
+      })
+    }
+
     return NextResponse.json({
       success: true,
-      message: "تم تحديث إعدادات واجهة العميل بنجاح 🎉",
+      message: "تم تحديث إعدادات واجهة العميل وإشعار العملاء بنجاح 🎉",
     })
   } catch (error) {
     console.error("Error updating restaurant customization:", error)

@@ -105,8 +105,12 @@ model Address {
   buildingNumber String?
   floor          String?
   apartment      String?
+  landmark       String?
+  phone          String?
 
   orders Order[] @relation("DeliveryAddressOrders")
+
+  @@index([userId])
 }
 
 model Restaurant {
@@ -129,14 +133,15 @@ model Restaurant {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  branches         Branch[]
-  coupons          Coupon[]
-  reviews          Review[]
-  staffMembers     RestaurantStaff[]
-  paymentNumbers   PaymentNumber[]
-  menuCategories   MenuCategory[]
-  driverProfiles   DriverProfile[]
-  customerMessages CustomerMessage[]
+  branches           Branch[]
+  coupons            Coupon[]
+  reviews            Review[]
+  staffMembers       RestaurantStaff[]
+  paymentNumbers     PaymentNumber[]
+  menuCategories     MenuCategory[]
+  driverProfiles     DriverProfile[]
+  customerMessages   CustomerMessage[]
+  promoNotifications PromoNotification[]
 }
 
 model RestaurantStaff {
@@ -185,6 +190,8 @@ model Branch {
   orders          Order[]
   branchMenuItems BranchMenuItem[]
   driverProfiles  DriverProfile[]
+
+  @@index([restaurantId, isActive])
 }
 
 model MenuCategory {
@@ -197,6 +204,9 @@ model MenuCategory {
   order        Int         @default(0)
 
   items MenuItem[]
+
+  @@index([restaurantId, order])
+  @@index([branchId, order])
 }
 
 model MenuItem {
@@ -217,6 +227,8 @@ model MenuItem {
   branchItems     BranchMenuItem[]
   optionGroups    ItemOptionGroup[]
   targetedCoupons Coupon[]          @relation("TargetMenuItemCoupons")
+
+  @@index([categoryId, isAvailable])
 }
 
 model ItemOptionGroup {
@@ -273,6 +285,8 @@ model Coupon {
   createdAt        DateTime     @default(now())
 
   orders Order[]
+
+  @@index([restaurantId, isActive])
 }
 
 model Order {
@@ -328,6 +342,10 @@ model Order {
   items        OrderItem[]
   review       Review?
   chatMessages OrderChatMessage[]
+
+  @@index([branchId, status, createdAt])
+  @@index([customerId, createdAt])
+  @@index([riderId, status])
 }
 
 model DriverProfile {
@@ -398,6 +416,8 @@ model OrderChatMessage {
   senderRole String
   text       String
   timestamp  DateTime @default(now())
+
+  @@index([orderId, timestamp])
 }
 
 model OrderItem {
@@ -410,6 +430,9 @@ model OrderItem {
   price           Float
   notes           String?
   selectedOptions Json?
+
+  @@index([orderId])
+  @@index([menuItemId])
 }
 
 model Review {
@@ -426,6 +449,8 @@ model Review {
   comment        String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+
+  @@index([restaurantId, createdAt])
 }
 
 model CustomerMessage {
@@ -444,5 +469,35 @@ model CustomerMessage {
   status       String    @default("unread")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([restaurantId, status, createdAt])
 }
+
+model DevicePushToken {
+  id           String   @id @default(cuid())
+  token        String   @unique
+  userId       String?
+  restaurantId String?
+  platform     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+model PromoNotification {
+  id           String      @id @default(cuid())
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  title        String
+  body         String
+  type         String      @default("offer") // "offer" | "discount" | "coupon"
+  couponCode   String?
+  createdById  String?
+  createdAt    DateTime    @default(now())
+
+  @@index([restaurantId, createdAt])
+}
+
+
 

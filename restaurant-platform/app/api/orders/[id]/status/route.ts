@@ -9,7 +9,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(req)
     if (!user) {
       return NextResponse.json({ error: "غير مصرح لك بتغيير حالة الطلب" }, { status: 401 })
     }

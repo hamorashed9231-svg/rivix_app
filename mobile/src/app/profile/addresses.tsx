@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,25 +14,59 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRestaurant } from '@/context/RestaurantContext';
+import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { fetchUserAddresses, addUserAddress, UserAddress } from '@/services/user';
+import {
+  fetchUserAddresses,
+  addUserAddress,
+  deleteUserAddress,
+  UserAddress,
+} from '@/services/user';
 import { getCurrentLocation } from '@/services/location';
-
+import { calculateDeliveryForCustomer, isInvalidLocation } from '@/services/delivery';
 import { LocationPickerMapModal } from '@/components/LocationPickerMapModal';
 
 export default function SavedAddressesScreen() {
   const router = useRouter();
-  const { primaryColor } = useRestaurant();
+  const { restaurant, primaryColor } = useRestaurant();
+  const { user } = useAuth();
   const { language, isRTL } = useLanguage();
+
+  const branches = (restaurant as any)?.branches || [];
 
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
 
+  // Form states
+  const [label, setLabel] = useState<string>('المنزل');
+  const [streetName, setStreetName] = useState<string>('');
+  const [buildingNumber, setBuildingNumber] = useState<string>('');
+  const [floor, setFloor] = useState<string>('');
+  const [apartment, setApartment] = useState<string>('');
+  const [landmark, setLandmark] = useState<string>('');
+  const [phone, setPhone] = useState<string>(user?.phone || '');
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+
+  const [locating, setLocating] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [showMapModal, setShowMapModal] = useState<boolean>(false);
+  const [isStaleLocation, setIsStaleLocation] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (user?.phone && !phone) {
+      setPhone(user.phone);
+    }
+  }, [user?.phone]);
+
   const loadAddresses = async () => {
     setLoading(true);
     const list = await fetchUserAddresses();
     setAddresses(list);
+    if (list.length === 0) {
+      setShowAddForm(true);
+    }
     setLoading(false);
   };
 
@@ -40,33 +74,14 @@ export default function SavedAddressesScreen() {
     loadAddresses();
   }, []);
 
-  // Form states
-  const [label, setLabel] = useState<string>('');
-  const [details, setDetails] = useState<string>('');
-  const [streetName, setStreetName] = useState<string>('');
-  const [buildingNumber, setBuildingNumber] = useState<string>('');
-  const [floor, setFloor] = useState<string>('');
-  const [apartment, setApartment] = useState<string>('');
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
-  const [locating, setLocating] = useState<boolean>(false);
-  const [submitting, setSubmitting] = useState<boolean>(false);
-  const [showMapModal, setShowMapModal] = useState<boolean>(false);
+  // Calculate delivery fee automatically whenever GPS / Map coordinates are set
+  const liveDeliveryCalc = useMemo(() => {
+    if (isInvalidLocation(lat, lng) || branches.length === 0) return null;
+    return calculateDeliveryForCustomer(lat!, lng!, branches);
+  }, [lat, lng, branches]);
 
-  const [showManualInput, setShowManualInput] = useState<boolean>(false);
-  const [manualLatStr, setManualLatStr] = useState<string>('');
-  const [manualLngStr, setManualLngStr] = useState<string>('');
-  const [isStaleLocation, setIsStaleLocation] = useState<boolean>(false);
-
-  const isInvalid = (l: number | null, lg: number | null) => {
-    if (!l || !lg) return true;
-    if (l === 0 && lg === 0) return true;
-    if (Math.abs(l - 30.0444) < 0.0001 && Math.abs(lg - 31.2357) < 0.0001) return true;
-    if (Math.abs(l - 24.7136) < 0.0001 && Math.abs(lg - 46.6753) < 0.0001) return true;
-    return false;
-  };
-
-  const handleFetchCurrentGPS = async () => {
+  // Turn on GPS, capture location, calculate delivery fee, and open interactive map
+  const handleFetchGPSAndOpenMap = async () => {
     setLocating(true);
     setIsStaleLocation(false);
     const coords = await getCurrentLocation();
@@ -75,141 +90,222 @@ export default function SavedAddressesScreen() {
     if (coords) {
       setLat(coords.latitude);
       setLng(coords.longitude);
-      setManualLatStr(coords.latitude.toString());
-      setManualLngStr(coords.longitude.toString());
-
       if (coords.isStale) {
         setIsStaleLocation(true);
-        Alert.alert(
-          language === 'ar' ? 'تنبيه دقة الموقع' : 'Location Accuracy Warning',
-          language === 'ar'
-            ? 'آخر موقع معروف (قد لا يكون دقيقًا) — حدد موقعك الحالي يدويًا لو مختلف'
-            : 'Last known location (may not be accurate) — set your current location manually if different.'
-        );
-      } else {
-        Alert.alert(
-          language === 'ar' ? 'تم تحديد الموقع' : 'Location Found',
-          `${language === 'ar' ? 'الإحداثيات: ' : 'Coords: '} ${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`
-        );
       }
+      // Open the interactive map centered on the captured GPS coordinates
+      setShowMapModal(true);
     } else {
-      setShowManualInput(true);
-      Alert.alert(
-        language === 'ar' ? 'تنبيه الـ GPS' : 'GPS Warning',
-        language === 'ar'
-          ? 'لم نتمكن من الوصول للـ GPS. يمكنك إدخال إحداثيات موقعك على الخريطة يدويًا.'
-          : 'GPS position unavailable. You can enter manual coordinates below.'
-      );
+      // Even if GPS signal is unavailable indoors, open the interactive map so customer can pick location
+      setShowMapModal(true);
     }
-  };
-
-  const handleApplyManualCoords = () => {
-    const parsedLat = parseFloat(manualLatStr);
-    const parsedLng = parseFloat(manualLngStr);
-
-    if (isNaN(parsedLat) || isNaN(parsedLng) || isInvalid(parsedLat, parsedLng)) {
-      Alert.alert(
-        language === 'ar' ? 'خطأ' : 'Error',
-        language === 'ar' ? 'يرجى إدخال خط عرض وطول صحيحين لموقعك' : 'Please enter valid latitude and longitude.'
-      );
-      return;
-    }
-
-    setLat(parsedLat);
-    setLng(parsedLng);
-    Alert.alert(
-      language === 'ar' ? 'تم الحفظ اليدوي' : 'Coords Set',
-      `${language === 'ar' ? 'تم اختيار الإحداثيات: ' : 'Set coords: '} ${parsedLat.toFixed(4)}, ${parsedLng.toFixed(4)}`
-    );
   };
 
   const handleSaveAddress = async () => {
-    if (!label.trim() || !details.trim()) {
+    if (isInvalidLocation(lat, lng)) {
       Alert.alert(
-        language === 'ar' ? 'تنبيه' : 'Validation',
-        language === 'ar' ? 'يرجى إدخال اسم العنوان والتفاصيل الكاملة' : 'Please fill in address label and details.'
+        language === 'ar' ? 'مطلوب تحديد الموقع على الخريطة' : 'Location Required',
+        language === 'ar'
+          ? 'يرجى الضغط على زر الـ GPS أو الخريطة لتحديد موقعك وحساب خدمة التوصيل أولاً'
+          : 'Please pick your location via GPS or Map first to calculate delivery fee.',
+        [
+          {
+            text: language === 'ar' ? 'فتح الخريطة الآن' : 'Open Map Now',
+            onPress: () => setShowMapModal(true),
+          },
+          { text: language === 'ar' ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        ]
       );
       return;
     }
 
-    if (isInvalid(lat, lng)) {
+    if (!streetName.trim()) {
       Alert.alert(
-        language === 'ar' ? 'مطلوب تحديد الموقع' : 'Location Required',
-        language === 'ar'
-          ? 'من فضلك حدد موقعك على الخريطة لحساب رسوم التوصيل'
-          : 'Please select your exact location on the map to calculate delivery fees.'
+        language === 'ar' ? 'بيانات ناقصة' : 'Missing Info',
+        language === 'ar' ? 'يرجى إدخال اسم الشارع' : 'Please enter the street name.'
       );
       return;
     }
+
+    if (!buildingNumber.trim()) {
+      Alert.alert(
+        language === 'ar' ? 'بيانات ناقصة' : 'Missing Info',
+        language === 'ar' ? 'يرجى إدخال رقم العمارة' : 'Please enter the building number.'
+      );
+      return;
+    }
+
+    if (!apartment.trim()) {
+      Alert.alert(
+        language === 'ar' ? 'بيانات ناقصة' : 'Missing Info',
+        language === 'ar' ? 'يرجى إدخال رقم الشقة' : 'Please enter the apartment number.'
+      );
+      return;
+    }
+
+    if (!phone.trim()) {
+      Alert.alert(
+        language === 'ar' ? 'بيانات ناقصة' : 'Missing Info',
+        language === 'ar' ? 'يرجى إدخال رقم تليفون للتواصل' : 'Please enter a contact phone number.'
+      );
+      return;
+    }
+
+    const formattedDetails = [
+      `شارع: ${streetName.trim()}`,
+      `عمارة: ${buildingNumber.trim()}`,
+      floor.trim() ? `دور: ${floor.trim()}` : null,
+      `شقة: ${apartment.trim()}`,
+      landmark.trim() ? `علامة مميزة: ${landmark.trim()}` : null,
+      `تليفون: ${phone.trim()}`,
+    ]
+      .filter(Boolean)
+      .join(' - ');
+
+    const finalLabel = label.trim() || `شارع ${streetName.trim()}`;
 
     setSubmitting(true);
     const result = await addUserAddress({
-      label,
-      details,
+      label: finalLabel,
+      details: formattedDetails,
       lat: lat!,
       lng: lng!,
-      streetName: streetName.trim() || undefined,
-      buildingNumber: buildingNumber.trim() || undefined,
+      streetName: streetName.trim(),
+      buildingNumber: buildingNumber.trim(),
       floor: floor.trim() || undefined,
-      apartment: apartment.trim() || undefined,
+      apartment: apartment.trim(),
+      landmark: landmark.trim() || undefined,
+      phone: phone.trim(),
     });
-
     setSubmitting(false);
 
     if (result) {
       Alert.alert(
-        language === 'ar' ? 'تم الحفظ' : 'Saved',
-        language === 'ar' ? 'تمت إضافة العنوان بنجاح' : 'Address added successfully.'
+        language === 'ar' ? 'تم حفظ العنوان بنجاح ✅' : 'Address Saved ✅',
+        liveDeliveryCalc?.isWithinRadius
+          ? language === 'ar'
+            ? `تم حفظ عنوانك بنجاح! خدمة التوصيل المحسوبة لموقعك: ${liveDeliveryCalc.deliveryFee} ج.م`
+            : `Address saved! Delivery fee: ${liveDeliveryCalc.deliveryFee} EGP`
+          : language === 'ar'
+          ? 'تمت إضافة العنوان بنجاح'
+          : 'Address added successfully.'
       );
-      setLabel('');
-      setDetails('');
+      setLabel('المنزل');
       setStreetName('');
       setBuildingNumber('');
       setFloor('');
       setApartment('');
+      setLandmark('');
       setLat(null);
       setLng(null);
-      setManualLatStr('');
-      setManualLngStr('');
       setShowAddForm(false);
-      loadAddresses();
+      await loadAddresses();
     } else {
       Alert.alert(
         language === 'ar' ? 'خطأ' : 'Error',
-        language === 'ar' ? 'فشل حفظ العنوان، حاول مجدداً' : 'Failed to save address.'
+        language === 'ar'
+          ? 'فشل حفظ العنوان، يرجى التأكد من اتصالك بالإنترنت والمحاولة مجدداً'
+          : 'Failed to save address.'
       );
     }
   };
 
+  const handleDeleteAddress = (id: string) => {
+    Alert.alert(
+      language === 'ar' ? 'حذف العنوان' : 'Delete Address',
+      language === 'ar' ? 'هل تريد حذف هذا العنوان المحفوظ؟' : 'Delete this saved address?',
+      [
+        { text: language === 'ar' ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        {
+          text: language === 'ar' ? 'حذف' : 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const ok = await deleteUserAddress(id);
+            if (ok) {
+              loadAddresses();
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderAddressCard = ({ item }: { item: UserAddress }) => {
-    const hasInvalidCoords = isInvalid(item.lat, item.lng);
-    const hasManualDetails = item.streetName || item.buildingNumber || item.floor || item.apartment;
+    const hasInvalidCoords = isInvalidLocation(item.lat, item.lng);
+    const addrDelivery =
+      !hasInvalidCoords && branches.length > 0
+        ? calculateDeliveryForCustomer(item.lat, item.lng, branches)
+        : null;
 
     return (
       <View style={[styles.card, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <View style={[styles.iconCircle, hasInvalidCoords && { backgroundColor: '#FEE2E2' }]}>
           <Text style={styles.iconText}>{hasInvalidCoords ? '⚠️' : '📍'}</Text>
         </View>
-        <View style={styles.addressInfo}>
-          <Text style={[styles.addressLabel, { textAlign: isRTL ? 'right' : 'left' }]}>{item.label}</Text>
-          <Text style={[styles.addressDetails, { textAlign: isRTL ? 'right' : 'left' }]}>{item.details}</Text>
 
-          {hasManualDetails ? (
-            <Text style={[styles.manualDetailText, { textAlign: isRTL ? 'right' : 'left' }]}>
-              🏢 {[
-                item.streetName ? `${language === 'ar' ? 'شارع: ' : 'Street: '}${item.streetName}` : null,
-                item.buildingNumber ? `${language === 'ar' ? 'عمارة: ' : 'Bldg: '}${item.buildingNumber}` : null,
-                item.floor ? `${language === 'ar' ? 'دور: ' : 'Floor: '}${item.floor}` : null,
-                item.apartment ? `${language === 'ar' ? 'شقة: ' : 'Apt: '}${item.apartment}` : null,
-              ].filter(Boolean).join(' | ')}
+        <View style={styles.addressInfo}>
+          <View style={[styles.cardHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.addressLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+              {item.label}
             </Text>
+            <TouchableOpacity onPress={() => handleDeleteAddress(item.id)} style={styles.deleteBtn}>
+              <Text style={styles.deleteBtnText}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[styles.addressDetails, { textAlign: isRTL ? 'right' : 'left' }]}>
+            {item.details}
+          </Text>
+
+          {(item.streetName || item.buildingNumber || item.apartment || item.landmark || item.phone) ? (
+            <View style={styles.structuredBadgesWrap}>
+              <Text style={[styles.manualDetailText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                🏢{' '}
+                {[
+                  item.streetName ? `شارع: ${item.streetName}` : null,
+                  item.buildingNumber ? `عمارة: ${item.buildingNumber}` : null,
+                  item.floor ? `دور: ${item.floor}` : null,
+                  item.apartment ? `شقة: ${item.apartment}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' | ')}
+              </Text>
+              {item.landmark ? (
+                <Text style={[styles.landmarkText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  ⭐ علامة مميزة: {item.landmark}
+                </Text>
+              ) : null}
+              {item.phone ? (
+                <Text style={[styles.phoneText, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  📞 تليفون التواصل: {item.phone}
+                </Text>
+              ) : null}
+            </View>
           ) : null}
 
-          <Text style={[styles.addressCoords, { textAlign: isRTL ? 'right' : 'left' }, hasInvalidCoords && { color: '#EF4444', fontWeight: 'bold' }]}>
-            {hasInvalidCoords
-              ? (language === 'ar' ? '⚠️ يتطلب تحديد الموقع على الخريطة' : '⚠️ Requires map location')
-              : `GPS: ${item.lat.toFixed(4)}, ${item.lng.toFixed(4)}`}
-          </Text>
+          {addrDelivery ? (
+            <View
+              style={[
+                styles.addrDeliveryPill,
+                addrDelivery.isWithinRadius
+                  ? { backgroundColor: '#ECFDF5', borderColor: '#6EE7B7' }
+                  : { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' },
+              ]}
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: 'bold',
+                  color: addrDelivery.isWithinRadius ? '#047857' : '#B91C1C',
+                  textAlign: isRTL ? 'right' : 'left',
+                }}
+              >
+                {addrDelivery.isWithinRadius
+                  ? `🚚 خدمة التوصيل: ${addrDelivery.deliveryFee} ج.م (المسافة: ${addrDelivery.distanceKm} كم)`
+                  : `⚠️ خارج نطاق التوصيل (${addrDelivery.distanceKm} كم)`}
+              </Text>
+            </View>
+          ) : null}
         </View>
       </View>
     );
@@ -220,12 +316,17 @@ export default function SavedAddressesScreen() {
       <StatusBar barStyle="light-content" backgroundColor={primaryColor} />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: primaryColor, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: primaryColor, flexDirection: isRTL ? 'row-reverse' : 'row' },
+        ]}
+      >
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>{isRTL ? '→' : '←'}</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {language === 'ar' ? 'العناوين المحفوظة' : 'Saved Addresses'}
+          {language === 'ar' ? 'تسجيل العنوان والموقع (GPS)' : 'Saved Addresses & GPS'}
         </Text>
         <TouchableOpacity style={styles.addButton} onPress={() => setShowAddForm(!showAddForm)}>
           <Text style={styles.addButtonText}>{showAddForm ? '✕' : '+'}</Text>
@@ -242,96 +343,203 @@ export default function SavedAddressesScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderAddressCard}
           contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
           ListHeaderComponent={
             showAddForm ? (
               <View style={styles.formCard}>
                 <Text style={[styles.formTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
-                  {language === 'ar' ? 'إضافة عنوان جديد' : 'Add New Address'}
+                  📍 {language === 'ar' ? 'تسجيل عنوان جديد عبر الـ GPS والخريطة' : 'Add New Address via GPS & Map'}
                 </Text>
 
-                <TextInput
-                  style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
-                  placeholder={language === 'ar' ? 'اسم العنوان (مثال: المنزل / العمل)' : 'Label (e.g. Home / Office)'}
-                  value={label}
-                  onChangeText={setLabel}
-                />
-
-                <TextInput
-                  style={[styles.input, styles.textArea, { textAlign: isRTL ? 'right' : 'left' }]}
-                  placeholder={
-                    language === 'ar'
-                      ? 'العنوان التفصيلي (الشارع، رقم العمارة، الشقة)...'
-                      : 'Detailed address (street, building, apt)...'
-                  }
-                  multiline
-                  numberOfLines={3}
-                  value={details}
-                  onChangeText={setDetails}
-                />
-
-                {/* Manual Address Detail Fields */}
-                <View style={styles.detailRow}>
-                  <TextInput
-                    style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
-                    placeholder={language === 'ar' ? 'اسم الشارع' : 'Street Name'}
-                    value={streetName}
-                    onChangeText={setStreetName}
-                  />
-                  <TextInput
-                    style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
-                    placeholder={language === 'ar' ? 'رقم العمارة' : 'Bldg No'}
-                    value={buildingNumber}
-                    onChangeText={setBuildingNumber}
-                  />
-                </View>
-
-                <View style={styles.detailRow}>
-                  <TextInput
-                    style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
-                    placeholder={language === 'ar' ? 'الدور' : 'Floor'}
-                    value={floor}
-                    onChangeText={setFloor}
-                  />
-                  <TextInput
-                    style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
-                    placeholder={language === 'ar' ? 'الشقة' : 'Apartment'}
-                    value={apartment}
-                    onChangeText={setApartment}
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.gpsButton, { backgroundColor: '#EFF6FF', borderColor: primaryColor, borderWidth: 1 }]}
-                  onPress={() => setShowMapModal(true)}
-                >
-                  <Text style={[styles.gpsButtonText, { color: primaryColor, fontWeight: 'bold' }]}>
-                    🗺️ {lat ? `${language === 'ar' ? 'تم اختيار موقع على الخريطة:' : 'Map Location Set:'} ${lat.toFixed(4)}, ${lng?.toFixed(4)}` : (language === 'ar' ? 'تحديد الموقع على الخريطة التفاعلية' : 'Pick Location on Interactive Map')}
+                {/* Step 1: Location & Map Buttons */}
+                <View style={styles.gpsSectionBox}>
+                  <Text style={[styles.stepLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                    {language === 'ar'
+                      ? '1️⃣ شغل الـ GPS وحدد موقعك على الخريطة لحساب خدمة التوصيل:'
+                      : '1️⃣ Turn on GPS & pick your location on the map:'}
                   </Text>
-                </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.gpsButton}
-                  onPress={handleFetchCurrentGPS}
-                  disabled={locating}
-                >
-                  {locating ? (
-                    <ActivityIndicator color="#0F172A" />
+                  <TouchableOpacity
+                    style={[styles.primaryMapBtn, { backgroundColor: primaryColor }]}
+                    onPress={handleFetchGPSAndOpenMap}
+                    disabled={locating}
+                  >
+                    {locating ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.primaryMapBtnText}>
+                        🎯🗺️{' '}
+                        {lat
+                          ? language === 'ar'
+                            ? 'تعديل موقعي على الخريطة أو إعادة تشغيل الـ GPS'
+                            : 'Update Location on Map / GPS'
+                          : language === 'ar'
+                          ? 'تشغيل الـ GPS وفتح الخريطة لتحديد موقعي'
+                          : 'Turn On GPS & Open Interactive Map'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.secondaryMapBtn, { borderColor: primaryColor }]}
+                    onPress={() => setShowMapModal(true)}
+                  >
+                    <Text style={[styles.secondaryMapBtnText, { color: primaryColor }]}>
+                      🗺️{' '}
+                      {lat
+                        ? `${language === 'ar' ? 'الموقع المحدد:' : 'Selected:'} ${lat.toFixed(4)}, ${lng?.toFixed(4)} (اضغط لفتح الخريطة)`
+                        : language === 'ar'
+                        ? 'فتح الخريطة التفاعلية مباشرة'
+                        : 'Open Interactive Map Directly'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Live Delivery Calculation Banner */}
+                  {liveDeliveryCalc ? (
+                    <View
+                      style={[
+                        styles.liveDeliveryCard,
+                        liveDeliveryCalc.isWithinRadius
+                          ? styles.liveDeliveryOk
+                          : styles.liveDeliveryError,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.liveDeliveryTitle,
+                          liveDeliveryCalc.isWithinRadius
+                            ? { color: '#065F46' }
+                            : { color: '#991B1B' },
+                        ]}
+                      >
+                        {liveDeliveryCalc.isWithinRadius
+                          ? `✅ تم تحديد الموقع — خدمة التوصيل: ${liveDeliveryCalc.deliveryFee} ج.م`
+                          : `⚠️ موقعك خارج نطاق التوصيل المتاح`}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.liveDeliverySub,
+                          liveDeliveryCalc.isWithinRadius
+                            ? { color: '#047857' }
+                            : { color: '#B91C1C' },
+                        ]}
+                      >
+                        {liveDeliveryCalc.isWithinRadius
+                          ? `المسافة المحسوبة بالـ GPS عن الفرع: ${liveDeliveryCalc.distanceKm} كم`
+                          : liveDeliveryCalc.reason}
+                      </Text>
+                    </View>
                   ) : (
-                    <Text style={styles.gpsButtonText}>
-                      🎯 {lat ? `${language === 'ar' ? 'تم التقاط الـ GPS:' : 'Captured:'} ${lat.toFixed(4)}, ${lng?.toFixed(4)}` : (language === 'ar' ? 'التقاط موقعي الحالي عبر الـ GPS' : 'Get Current GPS Location')}
+                    <Text style={styles.noGpsHint}>
+                      💡 بمجرد تشغيل الـ GPS وتحديد موقعك على الخريطة سيقوم السيستم بحساب خدمة التوصيل تلقائياً
                     </Text>
                   )}
-                </TouchableOpacity>
 
-                {isStaleLocation && (
-                  <View style={{ backgroundColor: '#FEF3C7', borderColor: '#F59E0B', borderWidth: 1, borderRadius: 10, padding: 10, marginVertical: 4 }}>
-                    <Text style={{ color: '#92400E', fontSize: 12, fontWeight: 'bold', textAlign: isRTL ? 'right' : 'left' }}>
-                      ⚠️ {language === 'ar'
-                        ? 'آخر موقع معروف (قد لا يكون دقيقًا) — حدد موقعك الحالي يدويًا لو مختلف'
-                        : 'Last known location (may not be accurate) — set your current location manually if different'}
+                  {isStaleLocation && (
+                    <Text style={styles.staleWarningText}>
+                      ⚠️ تأكد من مكان الدبوس على الخريطة لضمان دقة حساب التوصيل
                     </Text>
+                  )}
+                </View>
+
+                {/* Step 2: Detailed Address Inputs */}
+                <Text style={[styles.stepLabel, { textAlign: isRTL ? 'right' : 'left', marginTop: 8 }]}>
+                  {language === 'ar'
+                    ? '2️⃣ أدخل تفاصيل العنوان ورقم التليفون للتواصل:'
+                    : '2️⃣ Enter building, apartment, street, landmark & phone:'}
+                </Text>
+
+                {/* Street Name */}
+                <Text style={[styles.fieldLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  {language === 'ar' ? 'اسم الشارع *' : 'Street Name *'}
+                </Text>
+                <TextInput
+                  style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
+                  placeholder={language === 'ar' ? 'مثال: شارع سكينة / شارع 7' : 'e.g. Street 7'}
+                  value={streetName}
+                  onChangeText={setStreetName}
+                />
+
+                {/* Building Number & Apartment Number */}
+                <View style={styles.detailRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.fieldLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                      {language === 'ar' ? 'رقم الشقة *' : 'Apartment No *'}
+                    </Text>
+                    <TextInput
+                      style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                      placeholder={language === 'ar' ? 'مثال: شقة 4' : 'Apt No'}
+                      value={apartment}
+                      onChangeText={setApartment}
+                    />
                   </View>
-                )}
+
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.fieldLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                      {language === 'ar' ? 'رقم العمارة *' : 'Building No *'}
+                    </Text>
+                    <TextInput
+                      style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                      placeholder={language === 'ar' ? 'مثال: عمارة 12' : 'Bldg No'}
+                      value={buildingNumber}
+                      onChangeText={setBuildingNumber}
+                    />
+                  </View>
+                </View>
+
+                {/* Floor & Address Label */}
+                <View style={styles.detailRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.fieldLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                      {language === 'ar' ? 'اسم العنوان (المنزل/العمل)' : 'Address Label'}
+                    </Text>
+                    <TextInput
+                      style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                      placeholder={language === 'ar' ? 'المنزل / العمل' : 'Home / Work'}
+                      value={label}
+                      onChangeText={setLabel}
+                    />
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.fieldLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                      {language === 'ar' ? 'الدور (اختياري)' : 'Floor (Optional)'}
+                    </Text>
+                    <TextInput
+                      style={[styles.input, styles.halfInput, { textAlign: isRTL ? 'right' : 'left' }]}
+                      placeholder={language === 'ar' ? 'مثال: الدور 3' : 'Floor'}
+                      value={floor}
+                      onChangeText={setFloor}
+                    />
+                  </View>
+                </View>
+
+                {/* Landmark (علامة مميزة لو في) */}
+                <Text style={[styles.fieldLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  {language === 'ar' ? 'علامة مميزة (لو في)' : 'Landmark (Optional)'}
+                </Text>
+                <TextInput
+                  style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
+                  placeholder={
+                    language === 'ar'
+                      ? 'مثال: بجوار صيدلية... أو أمام مسجد...'
+                      : 'e.g. Next to pharmacy / mosque'
+                  }
+                  value={landmark}
+                  onChangeText={setLandmark}
+                />
+
+                {/* Contact Phone (رقم تليفون للتواصل) */}
+                <Text style={[styles.fieldLabel, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  {language === 'ar' ? 'رقم تليفون للتواصل *' : 'Contact Phone Number *'}
+                </Text>
+                <TextInput
+                  style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}
+                  placeholder={language === 'ar' ? 'أدخل رقم الموبايل للتواصل عند التوصيل' : '01xxxxxxxxx'}
+                  keyboardType="phone-pad"
+                  value={phone}
+                  onChangeText={setPhone}
+                />
 
                 <TouchableOpacity
                   style={[styles.saveBtn, { backgroundColor: primaryColor }]}
@@ -342,12 +550,21 @@ export default function SavedAddressesScreen() {
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
                     <Text style={styles.saveBtnText}>
-                      {language === 'ar' ? 'حفظ العنوان' : 'Save Address'}
+                      💾 {language === 'ar' ? 'حفظ العنوان والموقع' : 'Save Address & Location'}
                     </Text>
                   )}
                 </TouchableOpacity>
               </View>
-            ) : null
+            ) : (
+              <TouchableOpacity
+                style={[styles.addTopBannerBtn, { backgroundColor: primaryColor }]}
+                onPress={() => setShowAddForm(true)}
+              >
+                <Text style={styles.addTopBannerBtnText}>
+                  + {language === 'ar' ? 'إضافة عنوان جديد عبر الـ GPS والخريطة' : 'Add New Address via GPS & Map'}
+                </Text>
+              </TouchableOpacity>
+            )
           }
           ListEmptyComponent={
             !showAddForm ? (
@@ -375,9 +592,12 @@ export default function SavedAddressesScreen() {
         initialLng={lng}
         primaryColor={primaryColor}
         onClose={() => setShowMapModal(false)}
-        onConfirm={(selectedLat, selectedLng) => {
+        onConfirm={(selectedLat, selectedLng, detectedStreet) => {
           setLat(selectedLat);
           setLng(selectedLng);
+          if (detectedStreet && !streetName.trim()) {
+            setStreetName(detectedStreet);
+          }
         }}
       />
     </SafeAreaView>
@@ -406,7 +626,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   addButton: {
@@ -425,18 +645,31 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     gap: 12,
+    paddingBottom: 40,
   },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     padding: 14,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  cardHeaderRow: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  deleteBtn: {
+    padding: 4,
+  },
+  deleteBtnText: {
+    fontSize: 15,
   },
   iconCircle: {
     width: 40,
@@ -445,6 +678,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 2,
   },
   iconText: {
     fontSize: 20,
@@ -460,16 +694,37 @@ const styles = StyleSheet.create({
   addressDetails: {
     fontSize: 13,
     color: '#475569',
-    marginTop: 2,
+    marginTop: 3,
   },
-  addressCoords: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 4,
+  structuredBadgesWrap: {
+    marginTop: 6,
+    gap: 2,
+  },
+  manualDetailText: {
+    fontSize: 12,
+    color: '#1E293B',
+    fontWeight: '600',
+  },
+  landmarkText: {
+    fontSize: 12,
+    color: '#B45309',
+    fontWeight: '600',
+  },
+  phoneText: {
+    fontSize: 12,
+    color: '#0369A1',
+    fontWeight: 'bold',
+  },
+  addrDeliveryPill: {
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   formCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     elevation: 3,
@@ -477,6 +732,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   formTitle: {
     fontSize: 16,
@@ -484,55 +741,128 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     marginBottom: 12,
   },
+  gpsSectionBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    marginBottom: 10,
+    gap: 8,
+  },
+  stepLabel: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  primaryMapBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  primaryMapBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13.5,
+    fontWeight: 'bold',
+  },
+  secondaryMapBtn: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+  },
+  secondaryMapBtnText: {
+    fontSize: 12.5,
+    fontWeight: 'bold',
+  },
+  liveDeliveryCard: {
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 2,
+  },
+  liveDeliveryOk: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#6EE7B7',
+  },
+  liveDeliveryError: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+  },
+  liveDeliveryTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  liveDeliverySub: {
+    fontSize: 11.5,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  noGpsHint: {
+    fontSize: 11.5,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  staleWarningText: {
+    fontSize: 11,
+    color: '#B45309',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  fieldLabel: {
+    fontSize: 12.5,
+    fontWeight: 'bold',
+    color: '#334155',
+    marginBottom: 4,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#CBD5E1',
     borderRadius: 10,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     fontSize: 14,
     backgroundColor: '#F8FAFC',
-    marginBottom: 12,
+    marginBottom: 10,
+    color: '#0F172A',
   },
   halfInput: {
-    flex: 1,
     marginBottom: 0,
   },
   detailRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 12,
-  },
-  manualDetailText: {
-    fontSize: 12,
-    color: '#475569',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  textArea: {
-    minHeight: 70,
-    textAlignVertical: 'top',
-  },
-  gpsButton: {
-    backgroundColor: '#E2E8F0',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  gpsButtonText: {
-    color: '#0F172A',
-    fontSize: 13,
-    fontWeight: '600',
+    marginBottom: 10,
   },
   saveBtn: {
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
+    marginTop: 6,
+    elevation: 2,
   },
   saveBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
+    fontWeight: 'bold',
+  },
+  addTopBannerBtn: {
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addTopBannerBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: 'bold',
   },
   emptyContainer: {

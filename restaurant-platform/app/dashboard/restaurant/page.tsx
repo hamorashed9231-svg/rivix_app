@@ -15,9 +15,20 @@ import {
 export default async function RestaurantDashboardPage() {
   const user = await getCurrentUser()
 
-  if (!user || user.role !== "restaurant_owner") {
-    if (user?.role === "admin") {
+  if (!user) {
+    redirect("/login")
+  }
+
+  if (user.role !== "restaurant_owner") {
+    if (user.role === "admin") {
       redirect("/dashboard/admin")
+    }
+    const staffRecord = await prisma.restaurantStaff.findFirst({
+      where: { userId: user.id, isActive: true },
+      select: { id: true },
+    })
+    if (staffRecord) {
+      redirect("/dashboard/orders")
     }
     redirect("/login")
   }

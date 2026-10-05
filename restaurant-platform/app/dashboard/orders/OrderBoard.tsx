@@ -27,24 +27,34 @@ import {
   AlertTriangle
 } from "lucide-react"
 
-export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
+export function OrderBoard({
+  initialOrders,
+  restaurantId: propRestaurantId,
+}: {
+  initialOrders: any[]
+  restaurantId?: string | null
+}) {
   const [orders, setOrders] = useState<any[]>(initialOrders)
   const [activeTab, setActiveTab] = useState<"pending" | "accepted" | "history">("pending")
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const restaurantId = orders[0]?.restaurantId || null
+  const restaurantId =
+    propRestaurantId ||
+    orders[0]?.branch?.restaurantId ||
+    orders[0]?.restaurantId ||
+    null
 
   // Modals state
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any | null>(null)
   const [editingOrder, setEditingOrder] = useState<any | null>(null)
   const [editItems, setEditItems] = useState<any[]>([])
 
-  // Fetch updated orders list
+  // Fetch updated orders list for dashboard
   const refreshOrders = async () => {
     setIsRefreshing(true)
     try {
-      const res = await fetch("/api/customer/orders")
+      const res = await fetch("/api/customer/orders?scope=dashboard")
       if (res.ok) {
         const data = await res.json()
         if (data.orders) {
@@ -83,11 +93,13 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const eventData = change.doc.data()
-            if (eventData.type === "new_order") {
-              try {
-                const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3")
-                audio.play().catch(() => {})
-              } catch (e) {}
+            if (eventData.type === "new_order" || eventData.type === "order_status_changed") {
+              if (eventData.type === "new_order") {
+                try {
+                  const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3")
+                  audio.play().catch(() => {})
+                } catch (e) {}
+              }
 
               refreshOrders()
             }
@@ -105,14 +117,14 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
   const acceptedOrders = orders.filter((o) => o.status === "accepted" || o.status === "preparing" || o.status === "ready" || o.status === "out_for_delivery")
   const historyOrders = orders.filter((o) => o.status === "delivered" || o.status === "cancelled")
 
-  // Accept Order
-  const handleAcceptOrder = async (orderId: string) => {
+  // Update Order Status (Accept, Preparing, Ready, Out for Delivery, Delivered, Cancelled)
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
     setLoadingId(orderId)
     try {
       const res = await fetch(`/api/orders/${orderId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "accepted" }),
+        body: JSON.stringify({ status }),
       })
 
       if (res.ok) {
@@ -120,31 +132,20 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
         setOrders((prev) => prev.map((o) => (o.id === orderId ? data.order : o)))
       }
     } catch (err) {
-      alert("حدث خطأ أثناء قبول الطلب")
+      alert("حدث خطأ أثناء تحديث حالة الطلب")
     } finally {
       setLoadingId(null)
     }
   }
 
+  // Accept Order
+  const handleAcceptOrder = async (orderId: string) => {
+    await handleUpdateOrderStatus(orderId, "accepted")
+  }
+
   // Reject Order
   const handleRejectOrder = async (orderId: string) => {
-    setLoadingId(orderId)
-    try {
-      const res = await fetch(`/api/orders/${orderId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "cancelled" }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        setOrders((prev) => prev.map((o) => (o.id === orderId ? data.order : o)))
-      }
-    } catch (err) {
-      alert("حدث خطأ أثناء رفض الطلب")
-    } finally {
-      setLoadingId(null)
-    }
+    await handleUpdateOrderStatus(orderId, "cancelled")
   }
 
   // Forward to External System / POS
@@ -385,13 +386,20 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                       <span>
                         {order.deliveryAddress.details}
-                        {(order.deliveryAddress.streetName || order.deliveryAddress.buildingNumber || order.deliveryAddress.floor || order.deliveryAddress.apartment) && (
+                        {(order.deliveryAddress.streetName ||
+                          order.deliveryAddress.buildingNumber ||
+                          order.deliveryAddress.floor ||
+                          order.deliveryAddress.apartment ||
+                          order.deliveryAddress.landmark ||
+                          order.deliveryAddress.phone) && (
                           <span className="block text-slate-300 text-[10px] mt-0.5">
                             🏢 {[
                               order.deliveryAddress.streetName ? `شارع: ${order.deliveryAddress.streetName}` : null,
                               order.deliveryAddress.buildingNumber ? `عمارة: ${order.deliveryAddress.buildingNumber}` : null,
                               order.deliveryAddress.floor ? `دور: ${order.deliveryAddress.floor}` : null,
                               order.deliveryAddress.apartment ? `شقة: ${order.deliveryAddress.apartment}` : null,
+                              order.deliveryAddress.landmark ? `علامة مميزة: ${order.deliveryAddress.landmark}` : null,
+                              order.deliveryAddress.phone ? `تليفون العنوان: ${order.deliveryAddress.phone}` : null,
                             ].filter(Boolean).join(" | ")}
                           </span>
                         )}
@@ -471,21 +479,68 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
                   </div>
                 )}
 
-                {/* Label for Accepted/Forwarded Orders */}
+                {/* Label & Workflow Actions for Accepted/Active Orders */}
                 {order.status !== "pending" && (
-                  <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-                    <span>الحالة:</span>
-                    <span className={`font-bold px-2.5 py-1 rounded text-[11px] ${
-                      order.status === "accepted" 
-                        ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
-                        : order.status === "delivered"
-                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                        : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                    }`}>
-                      {order.status === "accepted" && "تم القبول والاستلام"}
-                      {order.status === "delivered" && "مكتمل ومسلم"}
-                      {order.status === "cancelled" && "ملغي"}
-                    </span>
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>الحالة:</span>
+                      <span className={`font-bold px-2.5 py-1 rounded text-[11px] ${
+                        order.status === "accepted" || order.status === "preparing" || order.status === "ready" || order.status === "out_for_delivery"
+                          ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
+                          : order.status === "delivered"
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                      }`}>
+                        {order.status === "accepted" && "تم القبول والاستلام"}
+                        {order.status === "preparing" && "جاري التجهيز في المطبخ 🍳"}
+                        {order.status === "ready" && "جاهز للتسليم للطيار 📦"}
+                        {order.status === "out_for_delivery" && "خرج للتوصيل مع الطيار 🛵"}
+                        {order.status === "delivered" && "مكتمل ومسلم ✅"}
+                        {order.status === "cancelled" && "ملغي ❌"}
+                      </span>
+                    </div>
+
+                    {(order.status === "accepted" ||
+                      order.status === "preparing" ||
+                      order.status === "ready" ||
+                      order.status === "out_for_delivery") && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {order.status === "accepted" && (
+                          <button
+                            onClick={() => handleUpdateOrderStatus(order.id, "preparing")}
+                            disabled={loadingId === order.id}
+                            className="flex-1 py-2 px-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-xs transition-all"
+                          >
+                            🍳 بدء التجهيز
+                          </button>
+                        )}
+                        {(order.status === "accepted" || order.status === "preparing") && (
+                          <button
+                            onClick={() => handleUpdateOrderStatus(order.id, "ready")}
+                            disabled={loadingId === order.id}
+                            className="flex-1 py-2 px-2.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all"
+                          >
+                            📦 جاهز للطيار
+                          </button>
+                        )}
+                        {order.status === "ready" && (
+                          <button
+                            onClick={() => handleUpdateOrderStatus(order.id, "out_for_delivery")}
+                            disabled={loadingId === order.id}
+                            className="flex-1 py-2 px-2.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 font-bold text-xs transition-all"
+                          >
+                            🛵 خرج للتوصيل
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleUpdateOrderStatus(order.id, "delivered")}
+                          disabled={loadingId === order.id}
+                          className="flex-1 py-2 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all"
+                        >
+                          ✅ تم التسليم
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -520,16 +575,23 @@ export function OrderBoard({ initialOrders }: { initialOrders: any[] }) {
             <div className="space-y-3 text-xs">
               <div className="bg-slate-900 p-3 rounded-xl space-y-1">
                 <p className="text-slate-400">العميل: <strong className="text-white">{selectedOrderDetails.customer?.name}</strong></p>
-                <p className="text-slate-400">الهاتف: <strong className="text-cyan-400 font-mono">{selectedOrderDetails.customer?.phone}</strong></p>
+                <p className="text-slate-400">الهاتف: <strong className="text-cyan-400 font-mono">{selectedOrderDetails.deliveryAddress?.phone || selectedOrderDetails.customer?.phone}</strong></p>
                 <p className="text-slate-400">
                   العنوان: <strong className="text-white">{selectedOrderDetails.deliveryAddress?.details}</strong>
-                  {(selectedOrderDetails.deliveryAddress?.streetName || selectedOrderDetails.deliveryAddress?.buildingNumber || selectedOrderDetails.deliveryAddress?.floor || selectedOrderDetails.deliveryAddress?.apartment) && (
+                  {(selectedOrderDetails.deliveryAddress?.streetName ||
+                    selectedOrderDetails.deliveryAddress?.buildingNumber ||
+                    selectedOrderDetails.deliveryAddress?.floor ||
+                    selectedOrderDetails.deliveryAddress?.apartment ||
+                    selectedOrderDetails.deliveryAddress?.landmark ||
+                    selectedOrderDetails.deliveryAddress?.phone) && (
                     <span className="block text-slate-300 font-normal mt-0.5">
                       🏢 {[
                         selectedOrderDetails.deliveryAddress?.streetName ? `شارع: ${selectedOrderDetails.deliveryAddress.streetName}` : null,
                         selectedOrderDetails.deliveryAddress?.buildingNumber ? `عمارة: ${selectedOrderDetails.deliveryAddress.buildingNumber}` : null,
                         selectedOrderDetails.deliveryAddress?.floor ? `دور: ${selectedOrderDetails.deliveryAddress.floor}` : null,
                         selectedOrderDetails.deliveryAddress?.apartment ? `شقة: ${selectedOrderDetails.deliveryAddress.apartment}` : null,
+                        selectedOrderDetails.deliveryAddress?.landmark ? `علامة مميزة: ${selectedOrderDetails.deliveryAddress.landmark}` : null,
+                        selectedOrderDetails.deliveryAddress?.phone ? `تليفون التواصل: ${selectedOrderDetails.deliveryAddress.phone}` : null,
                       ].filter(Boolean).join(" | ")}
                     </span>
                   )}

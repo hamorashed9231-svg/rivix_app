@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, getRestaurantAccess } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 export async function POST(
@@ -7,10 +7,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser(req)
 
-    if (!user || (user.role !== "restaurant_owner" && user.role !== "admin")) {
-      return NextResponse.json({ error: "غير مصرح لك بتحويل الطلبات" }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ error: "غير مصرح لك بتحويل الطلبات" }, { status: 401 })
     }
 
     const { id } = await params
@@ -22,12 +22,17 @@ export async function POST(
       include: {
         customer: true,
         items: { include: { menuItem: true } },
-        branch: true
-      }
+        branch: true,
+      },
     })
 
-    if (!order) {
+    if (!order || !order.branch) {
       return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 })
+    }
+
+    const access = await getRestaurantAccess(user.id, order.branch.restaurantId)
+    if (!access && user.role !== "admin") {
+      return NextResponse.json({ error: "غير مصرح لك بتحويل الطلبات" }, { status: 403 })
     }
 
     // Simulate POS / External System API Integration Dispatch
@@ -41,9 +46,10 @@ export async function POST(
       },
       include: {
         customer: { select: { name: true, phone: true } },
+        branch: { select: { address: true, name: true, restaurantId: true } },
         items: { include: { menuItem: true } },
         deliveryAddress: true,
-      }
+      },
     })
 
     return NextResponse.json({

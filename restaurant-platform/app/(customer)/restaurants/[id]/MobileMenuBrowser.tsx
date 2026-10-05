@@ -259,7 +259,7 @@ export function MobileMenuBrowser({
         </div>
       )}
 
-      {/* 2. Special Offers & Hot Deals Showcase (بطاقات العروض والتخفيضات 🏷️) */}
+      {/* 2. Special Offers & Hot Deals Showcase (كروت كبيرة متحركة يمين ويسار للعروض والخصومات 🏷️) */}
       {specialOfferItems.length > 0 && (
         <div className="space-y-3.5">
           <div className="flex items-center justify-between px-1">
@@ -270,11 +270,11 @@ export function MobileMenuBrowser({
               عروض وتخفيضات خاصة 🔥
             </h3>
             <span className="text-[11px] text-rose-400 font-bold">
-              {specialOfferItems.length} عروض متاحة
+              اسحب يميناً ويساراً ({specialOfferItems.length} عروض) ↔️
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="flex overflow-x-auto gap-4 pb-3 snap-x snap-mandatory no-scrollbar">
             {specialOfferItems.map((item) => {
               const cartQty = getItemCartQty(item.id)
               const isRecentlyAdded = addedIds[item.id]
@@ -288,7 +288,7 @@ export function MobileMenuBrowser({
                 <div
                   key={`offer_${item.id}`}
                   onClick={() => hasOptions && openCustomizationModal(item)}
-                  className={`relative bg-gradient-to-br from-slate-900/95 via-slate-900 to-rose-950/20 border border-rose-500/30 hover:border-rose-500/60 rounded-3xl p-4 shadow-xl backdrop-blur-md transition-all group flex flex-col justify-between ${
+                  className={`min-w-[280px] sm:min-w-[310px] max-w-[310px] snap-center shrink-0 relative bg-gradient-to-br from-slate-900/95 via-slate-900 to-rose-950/20 border border-rose-500/30 hover:border-rose-500/60 rounded-3xl p-4 shadow-xl backdrop-blur-md transition-all group flex flex-col justify-between ${
                     hasOptions ? "cursor-pointer" : ""
                   }`}
                 >
@@ -409,7 +409,7 @@ export function MobileMenuBrowser({
         </div>
       )}
 
-      {/* 3. Top Sellers Section (قسم الأكثر طلباً ومبيعاً 🔥) */}
+      {/* 3. Top Sellers Section (كروت كبيرة متحركة يمين ويسار للأكثر طلباً ومبيعاً 🔥) */}
       {topSellerItems.length > 0 && (
         <div className="space-y-3.5">
           <div className="flex items-center justify-between px-1">
@@ -420,11 +420,11 @@ export function MobileMenuBrowser({
               الأكثر طلباً ومبيعاً 🔥
             </h3>
             <span className="text-[11px] text-amber-400 font-bold">
-              اختيارات العملاء المفضلة
+              اسحب يميناً ويساراً ({topSellerItems.length} أصناف) ↔️
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="flex overflow-x-auto gap-4 pb-3 snap-x snap-mandatory no-scrollbar">
             {topSellerItems.map((item) => {
               const cartQty = getItemCartQty(item.id)
               const isRecentlyAdded = addedIds[item.id]
@@ -437,7 +437,7 @@ export function MobileMenuBrowser({
                 <div
                   key={`top_${item.id}`}
                   onClick={() => hasOptions && openCustomizationModal(item)}
-                  className={`relative bg-gradient-to-br from-slate-900/95 via-slate-900 to-amber-950/20 border border-amber-500/40 hover:border-amber-500/70 rounded-3xl p-4 shadow-xl backdrop-blur-md transition-all group flex flex-col justify-between ${
+                  className={`min-w-[280px] sm:min-w-[310px] max-w-[310px] snap-center shrink-0 relative bg-gradient-to-br from-slate-900/95 via-slate-900 to-amber-950/20 border border-amber-500/40 hover:border-amber-500/70 rounded-3xl p-4 shadow-xl backdrop-blur-md transition-all group flex flex-col justify-between ${
                     hasOptions ? "cursor-pointer" : ""
                   }`}
                 >

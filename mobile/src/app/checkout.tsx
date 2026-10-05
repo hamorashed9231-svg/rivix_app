@@ -152,6 +152,7 @@ export default function CheckoutScreen() {
       quantity: item.quantity,
       price: item.price,
       notes: item.notes,
+      selectedOptions: item.selectedOptions,
     }));
 
     const response = await createCustomerOrder({
@@ -160,6 +161,12 @@ export default function CheckoutScreen() {
       totalPrice: finalTotal,
       deliveryAddressId: selectedAddress.id,
       deliveryAddressDetails: selectedAddress.details,
+      streetName: selectedAddress.streetName,
+      buildingNumber: selectedAddress.buildingNumber,
+      floor: selectedAddress.floor,
+      apartment: selectedAddress.apartment,
+      landmark: selectedAddress.landmark,
+      phone: selectedAddress.phone,
       customerLat: selectedAddress.lat,
       customerLng: selectedAddress.lng,
       paymentMethod,
@@ -221,7 +228,7 @@ export default function CheckoutScreen() {
             <Text style={styles.sectionTitle}>📍 {t('deliveryAddress')}</Text>
             <TouchableOpacity onPress={() => router.push('/profile/addresses')}>
               <Text style={[styles.changeAddrText, { color: primaryColor }]}>
-                {language === 'ar' ? '+ تغيير / إضافة' : '+ Change / Add'}
+                {language === 'ar' ? '+ تسجيل عنوان بالخريطة / تغيير' : '+ Add Map Address / Change'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -234,39 +241,79 @@ export default function CheckoutScreen() {
               onPress={() => router.push('/profile/addresses')}
             >
               <Text style={styles.warningBoxText}>
-                ⚠️ {language === 'ar' ? 'لا يوجد عنوان محفوظ. اضغط هنا لإضافة عنوانك وموقعك على الخريطة' : 'No saved address. Tap here to add your location.'}
+                ⚠️ {language === 'ar' ? 'لا يوجد عنوان محفوظ. اضغط هنا لتشغيل الـ GPS وتحديد موقعك على الخريطة وإدخال بيانات العمارة والشقة' : 'No saved address. Tap here to set your GPS location and building details.'}
               </Text>
             </TouchableOpacity>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.addressListScroll}>
-              {addresses.map((addr) => {
-                const isSelected = selectedAddress?.id === addr.id;
-                const isInvalid = isInvalidLocation(addr.lat, addr.lng);
-                return (
-                  <TouchableOpacity
-                    key={addr.id}
-                    style={[
-                      styles.addressCardChip,
-                      isSelected && { borderColor: primaryColor, backgroundColor: '#F0F9FF' },
-                      isInvalid && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }
-                    ]}
-                    onPress={() => setSelectedAddress(addr)}
-                  >
-                    <Text style={styles.addressChipLabel}>
-                      {addr.label} {isInvalid ? '⚠️' : '📍'}
-                    </Text>
-                    <Text style={styles.addressChipDetails} numberOfLines={2}>
-                      {addr.details}
-                    </Text>
-                    {isInvalid && (
-                      <Text style={styles.invalidBadgeText}>
-                        {language === 'ar' ? 'يتطلب تحديد الموقع' : 'Requires map location'}
+            <>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.addressListScroll}>
+                {addresses.map((addr) => {
+                  const isSelected = selectedAddress?.id === addr.id;
+                  const isInvalid = isInvalidLocation(addr.lat, addr.lng);
+                  return (
+                    <TouchableOpacity
+                      key={addr.id}
+                      style={[
+                        styles.addressCardChip,
+                        isSelected && { borderColor: primaryColor, backgroundColor: '#F0F9FF' },
+                        isInvalid && { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }
+                      ]}
+                      onPress={() => setSelectedAddress(addr)}
+                    >
+                      <Text style={styles.addressChipLabel}>
+                        {addr.label} {isInvalid ? '⚠️' : '📍'}
                       </Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+                      <Text style={styles.addressChipDetails} numberOfLines={2}>
+                        {addr.details}
+                      </Text>
+                      {addr.phone ? (
+                        <Text style={{ fontSize: 11, color: '#0369A1', fontWeight: '600', marginTop: 2 }}>
+                          📞 {addr.phone}
+                        </Text>
+                      ) : null}
+                      {isInvalid && (
+                        <Text style={styles.invalidBadgeText}>
+                          {language === 'ar' ? 'يتطلب تحديد الموقع' : 'Requires map location'}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              {selectedAddress && !isAddressInvalid && deliveryResult ? (
+                <View
+                  style={{
+                    backgroundColor: deliveryResult.isWithinRadius ? '#ECFDF5' : '#FEF2F2',
+                    borderColor: deliveryResult.isWithinRadius ? '#A7F3D0' : '#FECACA',
+                    borderWidth: 1,
+                    borderRadius: 10,
+                    padding: 10,
+                    marginTop: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 'bold',
+                      color: deliveryResult.isWithinRadius ? '#065F46' : '#B91C1C',
+                      textAlign: isRTL ? 'right' : 'left',
+                    }}
+                  >
+                    {deliveryResult.isWithinRadius
+                      ? (language === 'ar'
+                          ? `🚚 خدمة التوصيل: ${deliveryResult.deliveryFee} ج.م (المسافة: ${deliveryResult.distanceKm} كم)`
+                          : `🚚 Delivery Fee: ${deliveryResult.deliveryFee} EGP (${deliveryResult.distanceKm} km)`)
+                      : (deliveryResult.reason || (language === 'ar' ? 'خارج نطاق التوصيل' : 'Out of delivery range'))}
+                  </Text>
+                  {selectedAddress.landmark ? (
+                    <Text style={{ fontSize: 11.5, color: '#475569', marginTop: 2, textAlign: isRTL ? 'right' : 'left' }}>
+                      📌 {language === 'ar' ? 'علامة مميزة:' : 'Landmark:'} {selectedAddress.landmark}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
+            </>
           )}
 
           {isAddressInvalid && (

@@ -44,7 +44,7 @@ export default async function RestaurantMenuPage() {
 
   if (access !== "owner" && access !== "manager" && user.role !== "admin") {
     // Restrict staff or unauthorized users
-    redirect("/dashboard/restaurant")
+    redirect("/dashboard/orders")
   }
 
   // 3. Get Default Branch for restaurant

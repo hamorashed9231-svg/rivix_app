@@ -8,9 +8,10 @@ export interface CartItem {
   quantity: number;
   image?: string;
   notes?: string;
+  selectedOptions?: any[];
 }
 
-export function addCartItem(prevItems: CartItem[], item: MenuItem): CartItem[] {
+export function addCartItem(prevItems: CartItem[], item: MenuItem & { selectedOptions?: any[] }): CartItem[] {
   const existingIndex = prevItems.findIndex((ci) => ci.menuItemId === item.id);
   if (existingIndex > -1) {
     const updated = [...prevItems];
@@ -28,6 +29,7 @@ export function addCartItem(prevItems: CartItem[], item: MenuItem): CartItem[] {
       price: item.price,
       quantity: 1,
       image: item.image,
+      selectedOptions: item.selectedOptions,
     },
   ];
 }

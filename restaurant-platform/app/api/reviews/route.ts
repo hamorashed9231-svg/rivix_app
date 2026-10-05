@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function POST(req: Request) {
   try {
-    const sessionUser = await getCurrentUser()
+    const sessionUser = await getCurrentUser(req)
 
     if (!sessionUser?.id) {
       return NextResponse.json({ error: "يرجى تسجيل الدخول لتقديم التقييم" }, { status: 401 })
@@ -27,6 +27,10 @@ export async function POST(req: Request) {
 
     if (!order) {
       return NextResponse.json({ error: "الطلب غير موجود" }, { status: 404 })
+    }
+
+    if (order.customerId !== userId) {
+      return NextResponse.json({ error: "غير مصرح لك بتقييم هذا الطلب" }, { status: 403 })
     }
 
     // Check if order is already reviewed

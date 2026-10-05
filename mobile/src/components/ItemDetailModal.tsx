@@ -69,11 +69,17 @@ export function ItemDetailModal({
     : 0;
 
   const handleAddToCart = () => {
-    const customItem: MenuItem = {
+    const formattedOptions = Object.entries(selectedOptions).map(([groupName, opt]: [string, any]) => ({
+      groupName,
+      optionName: opt?.name || '',
+      price: Number(opt?.price) || 0,
+    }));
+    const customItem: any = {
       ...item,
       id: selectedLabels.length > 0 ? `${item.id}_${selectedLabels.join('_')}` : item.id,
       name: selectedLabels.length > 0 ? `${item.name} (${selectedLabels.join(' + ')})` : item.name,
       price: unitPrice,
+      selectedOptions: formattedOptions.length > 0 ? formattedOptions : undefined,
     };
     for (let i = 0; i < quantity; i++) {
       addItem(customItem);

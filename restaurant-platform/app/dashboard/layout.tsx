@@ -83,6 +83,7 @@ export default async function DashboardLayout({
   const callCenterManagerNav = [
     { name: "شاشة استقبال وتوجيه الطلبات", href: "/dashboard/orders", iconName: "ShoppingBag" },
     { name: "التحكم في واجهة العميل والعروض", href: "/dashboard/restaurant/customization", iconName: "Sparkles" },
+    { name: "إدارة الكوبونات والخصومات", href: "/dashboard/admin/coupons", iconName: "Tag" },
     { name: "إدارة المنيو والأصناف", href: "/dashboard/restaurant/menu", iconName: "UtensilsCrossed" },
     { name: "رسائل وشكاوى العملاء", href: "/dashboard/restaurant/messages", iconName: "MessageSquare" },
     { name: "خريطة مواقع وتحليلات العملاء", href: "/dashboard/restaurant/customers-map", iconName: "MapPin" },
@@ -92,7 +93,6 @@ export default async function DashboardLayout({
   // 4. Call Center Staff Navigation
   const callCenterStaffNav = [
     { name: "شاشة استقبال وتوجيه الطلبات", href: "/dashboard/orders", iconName: "ShoppingBag" },
-    { name: "استعراض المنيو والأصناف", href: "/dashboard/restaurant/menu", iconName: "UtensilsCrossed" },
     { name: "رسائل واستفسارات العملاء", href: "/dashboard/restaurant/messages", iconName: "MessageSquare" },
   ]
 

@@ -22,7 +22,11 @@ import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { MenuItem } from '@/services/restaurant';
 import { requestLocationPermission } from '@/services/location';
-import { registerForPushNotificationsAsync } from '@/services/notifications';
+import {
+  registerForPushNotificationsAsync,
+  registerAndSyncPushToken,
+  checkAndTriggerPromoNotifications,
+} from '@/services/notifications';
 import { TENANT_CONFIG } from '@/config/tenant';
 import { validateCouponCode } from '@/services/coupon';
 
@@ -63,15 +67,27 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      let intervalId: ReturnType<typeof setInterval> | null = null;
       (async () => {
         const locationGranted = await requestLocationPermission();
         console.log('[Home] Location permission status:', locationGranted);
 
         const pushToken = await registerForPushNotificationsAsync();
         console.log('[Home] Push Token result:', pushToken);
+
+        await registerAndSyncPushToken(TENANT_CONFIG.restaurantSlug, user?.id);
+        await checkAndTriggerPromoNotifications(TENANT_CONFIG.restaurantSlug);
       })();
+
+      intervalId = setInterval(() => {
+        checkAndTriggerPromoNotifications(TENANT_CONFIG.restaurantSlug);
+      }, 45000);
+
+      return () => {
+        if (intervalId) clearInterval(intervalId);
+      };
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id]);
 
   if (!isAuthenticated) {
     return <Redirect href="/" />;
@@ -93,6 +109,18 @@ export default function HomeScreen() {
     }
     return [];
   }, [restaurant]);
+
+  // Large horizontal scrolling cards controlled by Call Center Manager / Restaurant Owner:
+  // Top Sellers, Special Offers (isFeatured), and Discounted Items (originalPrice > price)
+  const highlightedCarouselItems: MenuItem[] = useMemo(() => {
+    return rawItems.filter(
+      (item) =>
+        item.isAvailable !== false &&
+        (item.isTopSeller ||
+          item.isFeatured ||
+          (item.originalPrice && item.originalPrice > item.price))
+    );
+  }, [rawItems]);
 
   // Extract categories from API response categories array or rawItems, inserting OFFERS tab after ALL
   const categoryTabs = useMemo(() => {
@@ -430,6 +458,141 @@ export default function HomeScreen() {
         renderItem={renderMenuItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          selectedCategory === 'ALL' && highlightedCarouselItems.length > 0 ? (
+            <View style={styles.carouselSection}>
+              <View style={[styles.carouselHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.carouselSectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+                  {language === 'ar'
+                    ? '🔥 العروض والخصومات والأكثر مبيعاً'
+                    : '🔥 Top Sellers, Offers & Discounts'}
+                </Text>
+                <Text style={styles.carouselSwipeHint}>
+                  {language === 'ar' ? 'اسحب يميناً ويساراً ↔️' : 'Swipe ↔️'}
+                </Text>
+              </View>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={262}
+                decelerationRate="fast"
+                contentContainerStyle={[
+                  styles.carouselScrollContent,
+                  { flexDirection: isRTL ? 'row-reverse' : 'row' },
+                ]}
+              >
+                {highlightedCarouselItems.map((item) => {
+                  const hasDiscount = !!(item.originalPrice && item.originalPrice > item.price);
+                  const discountPct = hasDiscount
+                    ? Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100)
+                    : 0;
+                  const currentQty = getItemQuantity(item.id);
+
+                  return (
+                    <TouchableOpacity
+                      key={`carousel-${item.id}`}
+                      style={styles.largeCarouselCard}
+                      onPress={() => setSelectedItemForDetail(item)}
+                      activeOpacity={0.9}
+                    >
+                      <View style={styles.largeCardImageContainer}>
+                        <Image
+                          source={{ uri: item.image || FALLBACK_ITEM_IMAGE }}
+                          style={styles.largeCardImage}
+                          resizeMode="cover"
+                        />
+
+                        {hasDiscount ? (
+                          <View style={[styles.largeDiscountBadge, isRTL ? { right: 10 } : { left: 10 }]}>
+                            <Text style={styles.largeDiscountBadgeText}>
+                              🔥 {language === 'ar' ? `خصم ${discountPct}%` : `-${discountPct}%`}
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        <View
+                          style={[
+                            styles.largeTagBadge,
+                            isRTL ? { left: 10 } : { right: 10 },
+                            {
+                              backgroundColor: item.isTopSeller
+                                ? '#F59E0B'
+                                : primaryColor,
+                            },
+                          ]}
+                        >
+                          <Text style={styles.largeTagBadgeText}>
+                            {item.badge
+                              ? item.badge
+                              : item.isTopSeller
+                              ? (language === 'ar' ? '⭐ الأكثر مبيعاً' : '⭐ Best Seller')
+                              : (language === 'ar' ? '🏷️ عرض مميز' : '🏷️ Special Offer')}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.largeCardBody}>
+                        <Text
+                          style={[styles.largeCardTitle, { textAlign: isRTL ? 'right' : 'left' }]}
+                          numberOfLines={1}
+                        >
+                          {item.name}
+                        </Text>
+
+                        {item.description ? (
+                          <Text
+                            style={[styles.largeCardDesc, { textAlign: isRTL ? 'right' : 'left' }]}
+                            numberOfLines={1}
+                          >
+                            {item.description}
+                          </Text>
+                        ) : null}
+
+                        <View style={[styles.largeCardFooter, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                          <View style={[styles.priceContainer, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                            <Text style={[styles.largeCardPrice, { color: primaryColor }]}>
+                              {item.price} <Text style={styles.currencyText}>{t('currency')}</Text>
+                            </Text>
+                            {hasDiscount ? (
+                              <Text style={styles.originalPriceText}>
+                                {item.originalPrice} {t('currency')}
+                              </Text>
+                            ) : null}
+                          </View>
+
+                          <TouchableOpacity
+                            style={[styles.largeCardAddBtn, { backgroundColor: primaryColor }]}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              if (item.optionGroups && item.optionGroups.length > 0) {
+                                setSelectedItemForDetail(item);
+                              } else {
+                                addItem(item);
+                              }
+                            }}
+                          >
+                            <Text style={styles.largeCardAddBtnText}>
+                              {item.optionGroups && item.optionGroups.length > 0
+                                ? (language === 'ar' ? 'اختر' : 'Options')
+                                : currentQty > 0
+                                ? `+ (${currentQty})`
+                                : `+ ${t('addToCart')}`}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              <Text style={[styles.allMenuSectionTitle, { textAlign: isRTL ? 'right' : 'left' }]}>
+                🍽️ {language === 'ar' ? 'قائمة الطعام الكاملة' : 'Full Menu'}
+              </Text>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
@@ -1037,5 +1200,117 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  carouselSection: {
+    marginBottom: 14,
+  },
+  carouselHeaderRow: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  carouselSectionTitle: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  carouselSwipeHint: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  carouselScrollContent: {
+    gap: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  largeCarouselCard: {
+    width: 248,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    elevation: 4,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+  },
+  largeCardImageContainer: {
+    width: '100%',
+    height: 140,
+    position: 'relative',
+    backgroundColor: '#F1F5F9',
+  },
+  largeCardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  largeDiscountBadge: {
+    position: 'absolute',
+    top: 10,
+    backgroundColor: '#E11D48',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    elevation: 3,
+  },
+  largeDiscountBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11.5,
+    fontWeight: '900',
+  },
+  largeTagBadge: {
+    position: 'absolute',
+    bottom: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    elevation: 3,
+  },
+  largeTagBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  largeCardBody: {
+    padding: 12,
+    gap: 4,
+  },
+  largeCardTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  largeCardDesc: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  largeCardFooter: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  largeCardPrice: {
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  largeCardAddBtn: {
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  largeCardAddBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '800',
+  },
+  allMenuSectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginTop: 16,
+    marginBottom: 2,
   },
 });

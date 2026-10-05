@@ -83,9 +83,46 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
-export async function getCurrentUser() {
-  const session = await getServerSession(authOptions)
-  return session?.user
+export async function getCurrentUser(req?: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (session?.user?.id) {
+      return session.user
+    }
+  } catch (err) {
+    // Ignore getServerSession errors outside Next request context
+  }
+
+  try {
+    let authHeader: string | null = null
+
+    if (req) {
+      authHeader = req.headers.get("authorization") || req.headers.get("Authorization")
+    } else {
+      const { headers } = await import("next/headers")
+      const reqHeaders = await headers()
+      authHeader = reqHeaders.get("authorization") || reqHeaders.get("Authorization")
+    }
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const { verifyMobileToken } = await import("@/lib/driver-auth")
+      const fakeReq = req || new Request("http://localhost", { headers: { Authorization: authHeader } })
+      const payload = await verifyMobileToken(fakeReq)
+      if (payload && (payload.userId || payload.id)) {
+        const uid = String(payload.userId || payload.id)
+        return {
+          id: uid,
+          name: String(payload.name || ""),
+          email: String(payload.email || ""),
+          role: ((payload.role as string) || "customer") as any,
+        }
+      }
+    }
+  } catch (err) {
+    // Ignore header inspection errors in unit test environments
+  }
+
+  return undefined
 }
 
 export type RestaurantAccessLevel = "owner" | "manager" | "staff" | null

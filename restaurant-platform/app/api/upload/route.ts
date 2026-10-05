@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { v2 as cloudinary } from "cloudinary"
+import { getCurrentUser } from "@/lib/auth"
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "demo",
@@ -13,9 +14,15 @@ const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
 export async function POST(req: Request) {
   try {
+    const user = await getCurrentUser(req)
+    if (!user) {
+      return NextResponse.json({ error: "غير مصرح لك برفع ملفات" }, { status: 401 })
+    }
+
     const formData = await req.formData()
     const file = formData.get("file") as File | null
-    const folder = (formData.get("folder") as string) || "rivix/general"
+    const rawFolder = (formData.get("folder") as string) || "rivix/general"
+    const folder = rawFolder.replace(/[^a-zA-Z0-9/_-]/g, "").slice(0, 64) || "rivix/general"
 
     if (!file) {
       return NextResponse.json({ error: "لم يتم تقديم أي ملف للرفع" }, { status: 400 })
